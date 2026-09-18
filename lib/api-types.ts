@@ -57,3 +57,20 @@ export interface ApiErrorDetail {
 export interface ApiErrorPayload {
   error: ApiErrorDetail;
 }
+
+export interface HistoryItem {
+  id: string;
+  transactionHash: string;
+  chain: string;
+  outcome: string;
+  cacheHit: boolean;
+  searchedAt: string;
+}
+
+export interface HistoryListResponse {
+  data: HistoryItem[];
+  meta: {
+    total: number;
+    sessionId: string;
+  };
+}
