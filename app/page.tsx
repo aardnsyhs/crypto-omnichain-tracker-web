@@ -86,25 +86,23 @@ export default function HomePage() {
   }, [executeLookup, fetchHistory]);
 
   return (
-    <main className="min-h-screen bg-[#0b0f19] px-4 py-12 text-slate-100 sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-3xl flex-col gap-8">
+    <main className="min-h-screen bg-black px-4 py-12 text-zinc-100 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-3xl flex-col gap-6">
         {/* Header Branding */}
         <header className="flex flex-col items-center text-center">
-          <div className="mb-3 flex items-center gap-2">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-xl shadow-lg shadow-indigo-500/10">
-              ⚡
-            </span>
-            <span className="rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-xs font-semibold text-indigo-400">
-              Omnichain Tracker MVP
-            </span>
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-zinc-800/80 bg-zinc-900/60 px-3 py-1 font-mono text-xs text-zinc-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            <span>Omnichain EVM Indexer</span>
+            <span className="text-zinc-600">•</span>
+            <span className="text-zinc-500">v1.0</span>
           </div>
 
-          <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-            Crypto Omnichain Transaction Tracker
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-100 sm:text-4xl">
+            Transaction Explorer
           </h1>
-          <p className="mt-2.5 max-w-xl text-sm text-slate-400 leading-relaxed">
-            Fast, unified EVM transaction lookups across Ethereum, BNB Smart Chain, and Polygon with
-            resilient Redis cache-aside and real-time validation.
+          <p className="mt-2 max-w-lg text-sm text-zinc-400 leading-relaxed">
+            High-performance EVM ledger query across Ethereum, BNB Smart Chain, and Polygon with
+            Redis cache-aside resolution.
           </p>
         </header>
 
@@ -140,11 +138,8 @@ export default function HomePage() {
         />
 
         {/* Footer */}
-        <footer className="mt-4 border-t border-slate-800/80 pt-6 text-center text-xs text-slate-500">
-          <p>
-            Crypto Omnichain Transaction Tracker • Built with Next.js App Router, Tailwind CSS, and
-            NestJS API.
-          </p>
+        <footer className="mt-6 border-t border-zinc-900 pt-6 text-center font-mono text-[11px] text-zinc-600">
+          <p>Omnichain Transaction Explorer • Next.js & Tailwind CSS • Low Latency Cache</p>
         </footer>
       </div>
     </main>

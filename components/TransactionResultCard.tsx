@@ -24,14 +24,14 @@ export function TransactionResultCard({ response }: TransactionResultCardProps) 
     switch (data.status) {
       case 'confirmed':
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 font-mono text-xs font-medium text-emerald-400">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
             Confirmed
           </span>
         );
       case 'failed':
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/20 bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-400">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 font-mono text-xs font-medium text-rose-400">
             <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
             Failed
           </span>
@@ -39,7 +39,7 @@ export function TransactionResultCard({ response }: TransactionResultCardProps) 
       case 'pending':
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-400">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 font-mono text-xs font-medium text-amber-400">
             <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
             Pending
           </span>
@@ -48,32 +48,25 @@ export function TransactionResultCard({ response }: TransactionResultCardProps) 
   };
 
   const getChainBadge = () => {
-    const chainMap: Record<string, { label: string; color: string }> = {
-      ethereum: { label: 'Ethereum', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-      bsc: {
-        label: 'BNB Smart Chain',
-        color: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-      },
-      polygon: {
-        label: 'Polygon PoS',
-        color: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-      },
+    const chainMap: Record<string, { label: string }> = {
+      ethereum: { label: 'Ethereum' },
+      bsc: { label: 'BNB Smart Chain' },
+      polygon: { label: 'Polygon PoS' },
     };
-    const c = chainMap[data.chain] || { label: data.chain, color: 'bg-slate-800 text-slate-300' };
+    const c = chainMap[data.chain] || { label: data.chain };
     return (
-      <span
-        className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium ${c.color}`}
-      >
-        {c.label}
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-950 px-2.5 py-1 font-mono text-xs font-medium text-zinc-300">
+        <span className="h-1.5 w-1.5 rounded-full bg-zinc-500" />
+        <span>{c.label}</span>
       </span>
     );
   };
 
   return (
-    <article className="w-full rounded-xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl backdrop-blur transition hover:border-slate-700">
+    <article className="w-full overflow-hidden rounded-xl border border-zinc-800/80 bg-zinc-900/60 shadow-xl backdrop-blur-sm">
       {/* Header bar */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
-        <div className="flex items-center gap-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800/80 px-5 py-4">
+        <div className="flex items-center gap-2">
           {getStatusBadge()}
           {getChainBadge()}
         </div>
@@ -83,139 +76,158 @@ export function TransactionResultCard({ response }: TransactionResultCardProps) 
           {meta.cache.hit ? (
             <span
               title="Served immediately from low-latency Redis cache-aside"
-              className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-950/40 px-2.5 py-1 text-xs font-medium text-emerald-300"
+              className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 font-mono text-[11px] font-medium text-emerald-400"
             >
-              <span>⚡</span>
-              <span>Redis Cache Hit</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span>Cache Hit (Redis)</span>
             </span>
           ) : (
             <span
               title="Fetched live from upstream Blockchair provider"
-              className="inline-flex items-center gap-1.5 rounded-full border border-indigo-500/20 bg-indigo-950/40 px-2.5 py-1 text-xs font-medium text-indigo-300"
+              className="inline-flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-950 px-2.5 py-1 font-mono text-[11px] font-medium text-zinc-400"
             >
-              <span>🌐</span>
-              <span>Blockchair Upstream</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-zinc-500" />
+              <span>Live Upstream</span>
             </span>
           )}
         </div>
       </div>
 
-      {/* Transaction Hash */}
-      <div className="mb-6">
-        <div className="mb-1 flex items-center justify-between">
-          <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
-            Transaction Hash
-          </span>
-          <button
-            type="button"
-            onClick={() => handleCopy('hash', data.transactionHash)}
-            className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300"
-          >
-            {copiedKey === 'hash' ? '✓ Copied' : 'Copy'}
-          </button>
-        </div>
-        <p className="break-all rounded-lg border border-slate-800 bg-slate-950/80 p-3 font-mono text-xs text-slate-200">
-          {data.transactionHash}
-        </p>
-      </div>
-
-      {/* Addresses & Value Grid */}
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {/* From */}
-        <div className="rounded-lg border border-slate-800/80 bg-slate-950/50 p-4">
-          <div className="mb-1 flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
-              From (Sender)
+      {/* Ledger Rows */}
+      <div className="divide-y divide-zinc-800/50 px-5 text-sm">
+        {/* Transaction Hash */}
+        <div className="py-4">
+          <div className="mb-1.5 flex items-center justify-between">
+            <span className="text-xs font-mono uppercase tracking-wider text-zinc-500">
+              Transaction Hash
             </span>
             <button
               type="button"
-              onClick={() => handleCopy('from', data.from)}
-              className="text-xs text-indigo-400 hover:text-indigo-300"
+              onClick={() => handleCopy('hash', data.transactionHash)}
+              className="font-mono text-xs text-zinc-400 transition hover:text-zinc-200"
             >
-              {copiedKey === 'from' ? '✓ Copied' : 'Copy'}
+              {copiedKey === 'hash' ? '✓ copied' : 'copy'}
             </button>
           </div>
-          <p className="font-mono text-sm text-slate-200" title={data.from}>
-            {truncateHashOrAddress(data.from, 10, 8)}
+          <p className="break-all font-mono text-xs text-zinc-200 select-all">
+            {data.transactionHash}
           </p>
         </div>
 
-        {/* To */}
-        <div className="rounded-lg border border-slate-800/80 bg-slate-950/50 p-4">
-          <div className="mb-1 flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
-              To (Recipient)
+        {/* Value and Fee Row */}
+        <div className="grid grid-cols-1 gap-4 py-4 sm:grid-cols-2">
+          <div>
+            <span className="block text-xs font-mono uppercase tracking-wider text-zinc-500">
+              Transferred Value
             </span>
-            {data.to && (
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="font-mono text-xl font-bold tracking-tight text-zinc-100">
+                {data.value.formatted}
+              </span>
+              <span className="font-mono text-xs font-semibold text-zinc-400">
+                {data.value.symbol}
+              </span>
+            </div>
+            <span
+              className="mt-0.5 block font-mono text-[11px] text-zinc-500"
+              title={`Raw: ${data.value.raw}`}
+            >
+              {data.value.raw} wei
+            </span>
+          </div>
+
+          <div>
+            <span className="block text-xs font-mono uppercase tracking-wider text-zinc-500">
+              Transaction Fee
+            </span>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="font-mono text-xl font-bold tracking-tight text-zinc-100">
+                {data.fee.formatted}
+              </span>
+              <span className="font-mono text-xs font-semibold text-zinc-400">
+                {data.fee.symbol}
+              </span>
+            </div>
+            <span
+              className="mt-0.5 block font-mono text-[11px] text-zinc-500"
+              title={`Raw: ${data.fee.raw}`}
+            >
+              {data.fee.raw} wei
+            </span>
+          </div>
+        </div>
+
+        {/* From and To Row */}
+        <div className="grid grid-cols-1 gap-4 py-4 sm:grid-cols-2">
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-xs font-mono uppercase tracking-wider text-zinc-500">
+                From (Sender)
+              </span>
               <button
                 type="button"
-                onClick={() => handleCopy('to', data.to!)}
-                className="text-xs text-indigo-400 hover:text-indigo-300"
+                onClick={() => handleCopy('from', data.from)}
+                className="font-mono text-xs text-zinc-400 transition hover:text-zinc-200"
               >
-                {copiedKey === 'to' ? '✓ Copied' : 'Copy'}
+                {copiedKey === 'from' ? '✓ copied' : 'copy'}
               </button>
-            )}
+            </div>
+            <p className="font-mono text-xs text-zinc-200 select-all" title={data.from}>
+              {truncateHashOrAddress(data.from, 12, 10)}
+            </p>
           </div>
-          <p className="font-mono text-sm text-slate-200" title={data.to || 'Contract Deployment'}>
-            {data.to ? (
-              truncateHashOrAddress(data.to, 10, 8)
-            ) : (
-              <span className="italic text-slate-500">Contract Deployment</span>
-            )}
-          </p>
+
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-xs font-mono uppercase tracking-wider text-zinc-500">
+                To (Recipient)
+              </span>
+              {data.to && (
+                <button
+                  type="button"
+                  onClick={() => handleCopy('to', data.to!)}
+                  className="font-mono text-xs text-zinc-400 transition hover:text-zinc-200"
+                >
+                  {copiedKey === 'to' ? '✓ copied' : 'copy'}
+                </button>
+              )}
+            </div>
+            <p
+              className="font-mono text-xs text-zinc-200 select-all"
+              title={data.to || 'Contract Deployment'}
+            >
+              {data.to ? (
+                truncateHashOrAddress(data.to, 12, 10)
+              ) : (
+                <span className="italic text-zinc-500">Contract Deployment</span>
+              )}
+            </p>
+          </div>
         </div>
 
-        {/* Value */}
-        <div className="rounded-lg border border-slate-800/80 bg-slate-950/50 p-4">
-          <span className="block text-xs font-medium uppercase tracking-wider text-slate-400">
-            Transferred Value
-          </span>
-          <div className="mt-1 flex items-baseline gap-2">
-            <span className="font-mono text-lg font-bold text-white">{data.value.formatted}</span>
-            <span className="text-xs font-semibold text-indigo-400">{data.value.symbol}</span>
+        {/* Block Height and Timestamp */}
+        <div className="grid grid-cols-1 gap-4 py-4 sm:grid-cols-2">
+          <div>
+            <span className="block text-xs font-mono uppercase tracking-wider text-zinc-500">
+              Block Height
+            </span>
+            <p className="mt-1 font-mono text-xs text-zinc-200">#{data.blockNumber}</p>
           </div>
-          <span
-            className="mt-0.5 block font-mono text-[10px] text-slate-500"
-            title={`Raw: ${data.value.raw}`}
-          >
-            {data.value.raw} wei
-          </span>
-        </div>
-
-        {/* Gas Fee */}
-        <div className="rounded-lg border border-slate-800/80 bg-slate-950/50 p-4">
-          <span className="block text-xs font-medium uppercase tracking-wider text-slate-400">
-            Transaction Fee
-          </span>
-          <div className="mt-1 flex items-baseline gap-2">
-            <span className="font-mono text-lg font-bold text-white">{data.fee.formatted}</span>
-            <span className="text-xs font-semibold text-slate-300">{data.fee.symbol}</span>
+          <div>
+            <span className="block text-xs font-mono uppercase tracking-wider text-zinc-500">
+              Timestamp
+            </span>
+            <p className="mt-1 font-mono text-xs text-zinc-200">
+              {formatTimestamp(data.timestamp)}
+            </p>
           </div>
-          <span
-            className="mt-0.5 block font-mono text-[10px] text-slate-500"
-            title={`Raw: ${data.fee.raw}`}
-          >
-            {data.fee.raw} wei
-          </span>
-        </div>
-      </div>
-
-      {/* Block & Timestamp Metadata */}
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-lg border border-slate-800/60 bg-slate-950/30 p-3 text-xs">
-          <span className="text-slate-400">Block Height: </span>
-          <span className="font-mono font-medium text-slate-200">#{data.blockNumber}</span>
-        </div>
-        <div className="rounded-lg border border-slate-800/60 bg-slate-950/30 p-3 text-xs">
-          <span className="text-slate-400">Timestamp: </span>
-          <span className="font-mono text-slate-200">{formatTimestamp(data.timestamp)}</span>
         </div>
       </div>
 
       {/* Footer: Explorer link & Request ID */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-800 pt-4 text-xs">
-        <div className="font-mono text-slate-500" title={meta.requestId}>
-          Request ID: <span className="text-slate-400">{meta.requestId.slice(0, 8)}...</span>
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-zinc-800/80 bg-zinc-950/40 px-5 py-3 text-xs">
+        <div className="font-mono text-zinc-500" title={meta.requestId}>
+          Request ID: <span className="text-zinc-400">{meta.requestId.slice(0, 8)}...</span>
         </div>
 
         {data.explorerUrl && (
@@ -223,10 +235,10 @@ export function TransactionResultCard({ response }: TransactionResultCardProps) 
             href={data.explorerUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-1.5 font-medium text-indigo-300 transition hover:bg-indigo-500/20 hover:text-white"
+            className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700/80 bg-zinc-800/80 px-3 py-1.5 font-mono text-xs font-medium text-zinc-200 transition hover:border-zinc-600 hover:bg-zinc-700/90 hover:text-white"
           >
             <span>View on Explorer</span>
-            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"

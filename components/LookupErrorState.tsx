@@ -95,41 +95,41 @@ export function LookupErrorState({ error, onRetry }: LookupErrorStateProps) {
   return (
     <div
       role="alert"
-      className="w-full rounded-xl border border-rose-900/40 bg-rose-950/20 p-6 shadow-xl backdrop-blur"
+      className="w-full rounded-xl border border-zinc-800/80 bg-zinc-900/60 p-5 shadow-xl backdrop-blur-sm"
     >
-      <div className="flex items-start gap-4">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-rose-800/40 bg-rose-900/30 text-lg">
+      <div className="flex items-start gap-3.5">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950 font-mono text-sm text-zinc-300">
           {icon}
         </span>
         <div className="flex-1">
           <div className="mb-1 flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-semibold text-rose-200">{title}</h3>
+            <h3 className="text-sm font-semibold text-zinc-100">{title}</h3>
             <span
-              className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${badgeColor}`}
+              className={`inline-flex items-center rounded border px-2 py-0.5 font-mono text-[10px] font-medium ${badgeColor}`}
             >
               {badgeText}
             </span>
           </div>
 
-          <p className="text-sm text-slate-300 leading-relaxed">{description}</p>
+          <p className="text-xs text-zinc-400 leading-relaxed">{description}</p>
 
-          {hint && <p className="mt-2 text-xs font-medium text-amber-300/90">{hint}</p>}
+          {hint && <p className="mt-2 font-mono text-xs text-zinc-400">{hint}</p>}
 
           {requestId && (
-            <p className="mt-3 font-mono text-[11px] text-slate-500">
-              Request ID: <span className="text-slate-400">{requestId}</span>
+            <p className="mt-3 font-mono text-[11px] text-zinc-500">
+              Request ID: <span className="text-zinc-400">{requestId}</span>
             </p>
           )}
 
           {onRetry && (
-            <div className="mt-4">
+            <div className="mt-3">
               <button
                 type="button"
                 onClick={onRetry}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-rose-700/50 bg-rose-900/40 px-3.5 py-1.5 text-xs font-semibold text-rose-200 transition hover:bg-rose-900/60 hover:text-white"
+                className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700/80 bg-zinc-800 px-3 py-1.5 font-mono text-xs font-medium text-zinc-200 transition hover:border-zinc-600 hover:bg-zinc-700 hover:text-white"
               >
                 <span>Retry Lookup</span>
-                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"

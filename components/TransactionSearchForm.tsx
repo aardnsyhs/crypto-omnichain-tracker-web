@@ -66,18 +66,18 @@ export function TransactionSearchForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="w-full rounded-xl border border-slate-800 bg-slate-900/90 p-6 shadow-2xl backdrop-blur transition hover:border-slate-700"
+      className="w-full rounded-xl border border-zinc-800/80 bg-zinc-900/60 p-5 shadow-xl backdrop-blur-sm"
     >
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-4">
         {/* Network Selector */}
         <ChainSelect value={chain} onChange={setChain} disabled={isLoading} />
 
-        {/* Transaction Hash Input */}
+        {/* Command Bar Input */}
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
             <label
               htmlFor="tx-hash-input"
-              className="text-xs font-semibold uppercase tracking-wider text-slate-400"
+              className="text-xs font-mono uppercase tracking-wider text-zinc-500"
             >
               Transaction Hash
             </label>
@@ -87,23 +87,23 @@ export function TransactionSearchForm({
                   type="button"
                   onClick={handleClear}
                   disabled={isLoading}
-                  className="text-xs text-slate-400 hover:text-slate-200 disabled:opacity-50"
+                  className="font-mono text-xs text-zinc-500 transition hover:text-zinc-300 disabled:opacity-50"
                 >
-                  Clear
+                  clear
                 </button>
               )}
               <button
                 type="button"
                 onClick={handlePaste}
                 disabled={isLoading}
-                className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 disabled:opacity-50"
+                className="flex items-center gap-1 font-mono text-xs text-zinc-400 transition hover:text-zinc-200 disabled:opacity-50"
               >
-                <span>📋 Paste</span>
+                <span>paste</span>
               </button>
             </div>
           </div>
 
-          <div className="relative">
+          <div className="relative flex items-center">
             <input
               id="tx-hash-input"
               type="text"
@@ -116,17 +116,17 @@ export function TransactionSearchForm({
               disabled={isLoading}
               spellCheck={false}
               autoComplete="off"
-              className={`w-full rounded-lg border bg-slate-950/90 px-4 py-3 font-mono text-sm text-slate-100 placeholder-slate-600 shadow-inner transition focus:outline-none focus:ring-1 ${
+              className={`w-full rounded-lg border bg-zinc-950 px-4 py-3 font-mono text-sm text-zinc-100 placeholder-zinc-600 transition focus:outline-none focus:ring-1 ${
                 clientError
                   ? 'border-rose-500/80 focus:border-rose-500 focus:ring-rose-500'
-                  : 'border-slate-700 focus:border-indigo-500 focus:ring-indigo-500'
+                  : 'border-zinc-800 focus:border-zinc-500 focus:ring-zinc-500'
               } disabled:cursor-not-allowed disabled:opacity-50`}
             />
           </div>
 
           {clientError && (
-            <p className="mt-1 flex items-center gap-1 text-xs text-rose-400">
-              <span>⚠️</span>
+            <p className="mt-1 flex items-center gap-1.5 text-xs text-rose-400 font-mono">
+              <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
               <span>{clientError}</span>
             </p>
           )}
@@ -136,12 +136,12 @@ export function TransactionSearchForm({
         <button
           type="submit"
           disabled={isLoading || !hash.trim()}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-indigo-500/40 bg-gradient-to-r from-indigo-600 to-indigo-700 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-950/50 transition hover:from-indigo-500 hover:to-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-zinc-100 px-4 py-3 text-sm font-semibold text-zinc-950 shadow-sm transition hover:bg-white active:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-400 focus:ring-offset-2 focus:ring-offset-zinc-900 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500 disabled:shadow-none"
         >
           {isLoading ? (
             <>
               <svg
-                className="h-4 w-4 animate-spin text-white"
+                className="h-4 w-4 animate-spin text-zinc-950"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
