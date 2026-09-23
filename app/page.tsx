@@ -105,25 +105,19 @@ export default function HomePage() {
   }, [executeLookup, fetchHistory]);
 
   return (
-    <main className="min-h-screen bg-black px-4 py-12 text-zinc-100 sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-3xl flex-col gap-6">
-        {/* Header Branding */}
-        <header className="flex flex-col items-center text-center">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-zinc-800/80 bg-zinc-900/60 px-3 py-1 font-mono text-xs text-zinc-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            <span>Omnichain Transaction Story Explorer</span>
-            <span className="text-zinc-600">•</span>
-            <span className="text-zinc-500">v1.1</span>
-          </div>
-
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-100 sm:text-4xl">
-            Transaction Story
-          </h1>
-          <p className="mt-2 max-w-lg text-sm text-zinc-400 leading-relaxed">
-            Understand transaction intent, token movements, and approval allowances across Ethereum,
-            BNB Smart Chain, and Polygon with verified EVM decoding.
-          </p>
-        </header>
+    <main className="min-h-screen bg-black px-4 py-8 text-zinc-100 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+        {/* Header: Quiet and hidden when active result is displayed */}
+        {!result && (
+          <header className="flex flex-col items-center text-center">
+            <h1 className="text-3xl font-bold tracking-tight text-zinc-100 sm:text-4xl font-sans">
+              Transaction Story Explorer
+            </h1>
+            <p className="mt-2 max-w-lg text-sm text-zinc-400 leading-relaxed font-sans">
+              Investigate transaction intent, token movements, and approval allowances across EVM chains with verified on-chain decoding.
+            </p>
+          </header>
+        )}
 
         {/* Search Form */}
         <section aria-label="Transaction Search">
@@ -158,9 +152,9 @@ export default function HomePage() {
           onSelect={(chain, hash) => void executeLookup(chain, hash)}
         />
 
-        {/* Footer */}
-        <footer className="mt-6 border-t border-zinc-900 pt-6 text-center font-mono text-[11px] text-zinc-600">
-          <p>Omnichain Transaction Story Explorer • Next.js & Tailwind CSS • Low Latency Cache</p>
+        {/* Footer: Quiet ledger audit text without technology marketing */}
+        <footer className="mt-8 border-t border-zinc-900/80 pt-6 text-center text-xs text-zinc-500 font-sans">
+          <p>Omnichain Transaction Story Explorer • Multi-chain verified EVM ledger</p>
         </footer>
       </div>
     </main>

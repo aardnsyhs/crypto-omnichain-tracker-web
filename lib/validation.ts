@@ -181,3 +181,21 @@ export function formatReadableAmount(
     isApproximate: true,
   };
 }
+
+/**
+ * Converts a raw BigInt amount and decimals into an exact decimal string.
+ * Uses integer math with BigInt to avoid IEEE 754 floating-point errors.
+ */
+export function formatUnitsToExactDecimal(raw: bigint, decimals: number): string {
+  if (decimals <= 0) return raw.toString();
+  const isNegative = raw < 0n;
+  const absRaw = isNegative ? -raw : raw;
+  const divisor = 10n ** BigInt(decimals);
+  const intPart = absRaw / divisor;
+  const rem = absRaw % divisor;
+  if (rem === 0n) {
+    return (isNegative ? '-' : '') + intPart.toString();
+  }
+  const remStr = rem.toString().padStart(decimals, '0').replace(/0+$/, '');
+  return `${isNegative ? '-' : ''}${intPart.toString()}.${remStr}`;
+}

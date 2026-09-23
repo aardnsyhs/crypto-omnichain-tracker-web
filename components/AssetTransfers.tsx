@@ -26,13 +26,14 @@ interface NormalizedMovement {
 
 export function AssetTransfers({ data }: AssetTransfersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [openRowIds, setOpenRowIds] = useState<Set<string>>(new Set());
   const DEFAULT_LIMIT = 5;
 
   const hasNativeValue =
     Boolean(data.value?.raw) && data.value.raw !== '0' && data.value.raw !== '0x0';
   const tokenTransfers = data.tokenTransfers || [];
 
-  // Build unified indexed list of all movements to maintain strict order
+  // Build unified indexed list of all movements to maintain strict chronological order
   const movements: NormalizedMovement[] = [];
 
   if (hasNativeValue) {
@@ -41,6 +42,7 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
       index: 1,
       type: 'native',
       symbol: data.value.symbol,
+      name: 'Native ' + data.value.symbol,
       rawAmount: data.value.raw,
       formattedAmount: data.value.formatted,
       from: data.from,
@@ -69,12 +71,12 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
 
   if (totalMovements === 0) {
     return (
-      <div className="border-b border-zinc-800/80 p-5 sm:p-6 text-center">
-        <p className="font-mono text-xs text-zinc-400">
-          No standard ERC-20 transfers detected within decoder scope.
+      <div className="border-b border-zinc-800/60 p-5 sm:p-6 text-center">
+        <p className="font-sans text-xs text-zinc-400">
+          No standard ERC-20 token transfers detected within decoder coverage.
         </p>
-        <p className="mt-1 font-mono text-[11px] text-zinc-500">
-          Contract internal state changes or custom event signatures require archive trace data.
+        <p className="mt-1 font-sans text-xs text-zinc-500">
+          Internal contract state changes require archive trace data.
         </p>
       </div>
     );
@@ -83,156 +85,358 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
   const visibleMovements = isExpanded ? movements : movements.slice(0, DEFAULT_LIMIT);
   const hasMore = totalMovements > DEFAULT_LIMIT;
 
+  const toggleRowDetail = (id: string) => {
+    setOpenRowIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
   return (
-    <div className="border-b border-zinc-800/80 p-5 sm:p-6">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+    <section aria-label="Asset transfers" className="p-5 sm:p-6 min-w-0">
+      {/* Header bar */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 min-w-0">
         <div className="flex items-center gap-2">
-          <h3 className="text-xs font-mono uppercase tracking-wider text-zinc-400">
-            Transferred Assets
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 font-sans">
+            Asset transfers
           </h3>
-          <span className="rounded-full border border-zinc-800 bg-zinc-950 px-2 py-0.5 font-mono text-[11px] text-zinc-400">
-            {totalMovements} {totalMovements === 1 ? 'Movement' : 'Movements'}
+          <span className="rounded border border-zinc-800 bg-zinc-950 px-2 py-0.5 font-mono text-[11px] text-zinc-400">
+            {totalMovements} {totalMovements === 1 ? 'transfer' : 'transfers'}
           </span>
         </div>
         {hasMore && (
-          <span className="font-mono text-[11px] text-zinc-500">
+          <span className="font-sans text-xs text-zinc-500">
             {isExpanded
-              ? `Showing all ${totalMovements}`
-              : `Showing 1–${DEFAULT_LIMIT} of ${totalMovements}`}
+              ? `Showing all ${totalMovements} transfers`
+              : `Showing 1–${DEFAULT_LIMIT} of ${totalMovements} transfers`}
           </span>
         )}
       </div>
 
-      <div className="divide-y divide-zinc-800/80 rounded-xl border border-zinc-800/80 bg-zinc-950/40 overflow-hidden">
-        {visibleMovements.map((item) => {
-          const val = formatReadableAmount(item.formattedAmount);
-          const isNative = item.type === 'native';
+      {/* 1. DESKTOP VIEW: Aligned 6-Column Ledger Table (hidden on mobile, visible on md+) */}
+      <div className="hidden md:block rounded-lg border border-zinc-800/80 bg-zinc-950/60 overflow-hidden min-w-0">
+        <table className="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr className="border-b border-zinc-800/80 bg-zinc-900/60 font-sans text-zinc-400 font-semibold">
+              <th className="py-2.5 px-3.5 w-12 text-center">#</th>
+              <th className="py-2.5 px-3 min-w-[140px]">Asset</th>
+              <th className="py-2.5 px-3 text-right min-w-[150px]">Amount</th>
+              <th className="py-2.5 px-3 min-w-[200px]">From</th>
+              <th className="py-2.5 px-3 min-w-[200px]">To</th>
+              <th className="py-2.5 px-3 text-center w-20">Details</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-800/50">
+            {visibleMovements.map((item) => {
+              const val = formatReadableAmount(item.formattedAmount);
+              const isNative = item.type === 'native';
+              const isRowOpen = openRowIds.has(item.id);
 
-          return (
-            <div key={item.id} className="p-4 sm:p-5 min-w-0">
-              {/* Header row: Index, Asset Pill, Name, and Formatted Amount */}
-              <div className="flex flex-wrap items-start justify-between gap-2 pb-3 min-w-0">
-                <div className="flex items-center gap-2 min-w-0">
-                  {totalMovements > 1 && (
-                    <span className="font-mono text-xs font-bold text-zinc-500 shrink-0">
+              return (
+                <React.Fragment key={item.id}>
+                  <tr className="transition hover:bg-zinc-900/30">
+                    {/* 1. Index */}
+                    <td className="py-3 px-3.5 text-center font-mono text-xs font-semibold text-zinc-500">
                       #{item.index}
-                    </span>
-                  )}
-                  <span
-                    className={`inline-flex shrink-0 items-center rounded border px-2 py-0.5 font-mono text-xs font-semibold ${
-                      isNative
-                        ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-                        : 'border-sky-500/30 bg-sky-500/10 text-sky-400'
-                    }`}
-                  >
-                    {isNative ? 'Native' : 'ERC-20'}
-                  </span>
-                  <span className="font-mono text-sm font-bold text-zinc-100 truncate min-w-0">
-                    {item.name ? `${item.name} (${item.symbol})` : item.symbol}
-                  </span>
-                </div>
+                    </td>
 
-                {/* Amount display with mobile-accessible exact precision & copy */}
-                <div className="text-right ml-auto min-w-0">
-                  <div
-                    className="font-mono text-sm sm:text-base font-bold text-zinc-100"
-                    title={val.exact}
-                  >
-                    {item.formattedAmount !== null
-                      ? `${val.display} ${item.symbol}`
-                      : `${item.rawAmount} raw units`}
-                  </div>
+                    {/* 2. Asset */}
+                    <td className="py-3 px-3 min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span
+                          className={`inline-flex shrink-0 items-center rounded px-1.5 py-0.2 font-sans text-[10px] font-medium ${
+                            isNative
+                              ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                              : 'border border-zinc-700 bg-zinc-800/80 text-zinc-300'
+                          }`}
+                        >
+                          {isNative ? 'Native' : 'ERC-20'}
+                        </span>
+                        <span className="font-sans font-semibold text-zinc-100 truncate" title={item.name || item.symbol}>
+                          {item.symbol}
+                        </span>
+                        {item.name && item.name !== item.symbol && (
+                          <span className="text-[11px] text-zinc-500 font-sans truncate hidden lg:inline" title={item.name}>
+                            ({item.name})
+                          </span>
+                        )}
+                      </div>
+                    </td>
 
-                  {val.isApproximate && item.formattedAmount !== null && (
-                    <div className="mt-0.5 flex items-center justify-end gap-1.5 text-[10px] font-mono text-zinc-400">
-                      <span className="truncate" title={val.exact}>
-                        Exact: {val.exact} {item.symbol}
-                      </span>
-                      <CopyButton text={val.exact} label="exact amount" iconOnly className="shrink-0" />
-                    </div>
-                  )}
+                    {/* 3. Amount (Right Aligned) */}
+                    <td className="py-3 px-3 text-right min-w-0">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span
+                          className="font-mono text-xs sm:text-sm font-bold text-zinc-100 truncate"
+                          title={val.exact}
+                        >
+                          {item.formattedAmount !== null
+                            ? `${val.display} ${item.symbol}`
+                            : `${item.rawAmount} raw`}
+                        </span>
+                        {val.isApproximate && item.formattedAmount !== null && (
+                          <CopyButton
+                            text={val.exact}
+                            label={`exact ${item.symbol} amount`}
+                            iconOnly
+                            className="shrink-0"
+                          />
+                        )}
+                      </div>
+                    </td>
 
-                  {item.decimals === null && !isNative && (
-                    <div className="text-[10px] font-mono text-amber-400 mt-0.5">
-                      Decimals unverified on-chain
-                    </div>
-                  )}
-                </div>
-              </div>
+                    {/* 4. From */}
+                    <td className="py-3 px-3 min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span
+                          className="font-mono text-zinc-300 font-medium select-all"
+                          title={item.from}
+                        >
+                          {truncateHashOrAddress(item.from, 6, 4)}
+                        </span>
+                        <CopyButton text={item.from} label="sender address" iconOnly />
+                      </div>
+                    </td>
 
-              {/* Movement Flow: Sender ──► Recipient and Token Contract */}
-              <div className="mt-2 flex flex-col gap-2 rounded-lg border border-zinc-800/60 bg-zinc-900/40 p-3 min-w-0 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0 flex-1">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
-                    Sender (From)
-                  </span>
-                  <div className="flex items-center justify-between sm:justify-start gap-2 mt-0.5 min-w-0">
-                    <span
-                      className="font-mono text-xs font-medium text-zinc-200 truncate min-w-0 select-all"
-                      title={item.from}
-                    >
-                      {truncateHashOrAddress(item.from, 10, 8)}
-                    </span>
-                    <CopyButton text={item.from} label="from" className="shrink-0" />
-                  </div>
-                </div>
+                    {/* 5. To */}
+                    <td className="py-3 px-3 min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span
+                          className="font-mono text-zinc-300 font-medium select-all"
+                          title={item.to || 'Contract Deployment'}
+                        >
+                          {item.to ? truncateHashOrAddress(item.to, 6, 4) : 'Contract Deployment'}
+                        </span>
+                        {item.to && <CopyButton text={item.to} label="recipient address" iconOnly />}
+                      </div>
+                    </td>
 
-                <div className="hidden sm:block text-zinc-500 font-mono text-xs px-2 shrink-0">
-                  ──►
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
-                    Recipient (To)
-                  </span>
-                  <div className="flex items-center justify-between sm:justify-start gap-2 mt-0.5 min-w-0">
-                    <span
-                      className="font-mono text-xs font-medium text-zinc-200 truncate min-w-0 select-all"
-                      title={item.to}
-                    >
-                      {truncateHashOrAddress(item.to, 10, 8)}
-                    </span>
-                    <CopyButton text={item.to} label="to" className="shrink-0" />
-                  </div>
-                </div>
-
-                {!isNative && item.tokenAddress && (
-                  <div className="min-w-0 flex-1 sm:border-l sm:border-zinc-800 sm:pl-3 pt-2 sm:pt-0 border-t border-zinc-800 sm:border-t-0">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
-                      Token Contract
-                    </span>
-                    <div className="flex items-center justify-between sm:justify-start gap-2 mt-0.5 min-w-0">
-                      <span
-                        className="font-mono text-xs text-zinc-400 truncate min-w-0 select-all"
-                        title={item.tokenAddress}
+                    {/* 6. Details Action */}
+                    <td className="py-3 px-3 text-center">
+                      <button
+                        type="button"
+                        onClick={() => toggleRowDetail(item.id)}
+                        className="font-sans text-[11px] text-zinc-400 hover:text-zinc-200 px-2 py-0.5 rounded border border-zinc-800 bg-zinc-900 transition"
                       >
-                        {truncateHashOrAddress(item.tokenAddress, 8, 6)}
-                      </span>
-                      <CopyButton text={item.tokenAddress} label="contract" className="shrink-0" />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+                        {isRowOpen ? 'Hide' : 'Details'}
+                      </button>
+                    </td>
+                  </tr>
 
-        {/* Expand / Collapse Toggle for lists > 5 */}
+                  {/* Expanded Sub-row with technical proofs */}
+                  {isRowOpen && (
+                    <tr className="bg-zinc-950/90 border-b border-zinc-800/80">
+                      <td colSpan={6} className="py-2.5 px-4 text-xs font-sans text-zinc-400">
+                        <div className="flex flex-wrap items-center justify-between gap-3 min-w-0">
+                          <div className="flex flex-wrap items-center gap-4 min-w-0">
+                            {!isNative && item.tokenAddress && (
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="text-zinc-500 font-medium">Token contract:</span>
+                                <span className="font-mono text-zinc-300 select-all" title={item.tokenAddress}>
+                                  {item.tokenAddress}
+                                </span>
+                                <CopyButton text={item.tokenAddress} label="token contract address" iconOnly />
+                              </div>
+                            )}
+
+                            {item.logIndex !== undefined && (
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-zinc-500 font-medium">Log index:</span>
+                                <span className="font-mono text-zinc-300">#{item.logIndex}</span>
+                              </div>
+                            )}
+
+                            {item.decimals !== null && item.decimals !== undefined && (
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-zinc-500 font-medium">Decimals:</span>
+                                <span className="font-mono text-zinc-300">{item.decimals}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 text-right ml-auto">
+                            <span className="text-zinc-500 font-medium">Exact amount:</span>
+                            <span className="font-mono font-semibold text-zinc-200 select-all">
+                              {val.exact} {item.symbol}
+                            </span>
+                            <CopyButton text={val.exact} label="exact amount" iconOnly />
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+
+        {/* Desktop Expand / Collapse Button */}
         {hasMore && (
-          <div className="p-3 text-center border-t border-zinc-800/80 bg-zinc-900/30">
+          <div className="p-3 text-center bg-zinc-950/80 border-t border-zinc-800/60">
             <button
               type="button"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2 font-mono text-xs font-semibold text-zinc-200 transition hover:bg-zinc-700 hover:text-white focus:outline-none focus:ring-1 focus:ring-zinc-400"
+              className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 font-sans text-xs font-semibold text-zinc-200 transition hover:bg-zinc-800 hover:text-white focus:outline-none focus:ring-1 focus:ring-zinc-400"
             >
               <span>
-                {isExpanded ? 'Show fewer (first 5 transfers)' : `Show all ${totalMovements} transfers`}
+                {isExpanded
+                  ? 'Show first 5'
+                  : `Show all ${totalMovements} transfers`}
               </span>
-              <span>{isExpanded ? '▲' : '▼'}</span>
+              <span className="font-mono text-[11px]">{isExpanded ? '▲' : '▼'}</span>
             </button>
           </div>
         )}
       </div>
-    </div>
+
+      {/* 2. MOBILE VIEW: Structured Vertical Layout (hidden on md+, visible on mobile) */}
+      <div className="md:hidden divide-y divide-zinc-800/60 rounded-lg border border-zinc-800/80 bg-zinc-950/60 overflow-hidden min-w-0">
+        {visibleMovements.map((item) => {
+          const val = formatReadableAmount(item.formattedAmount);
+          const isNative = item.type === 'native';
+          const isRowOpen = openRowIds.has(item.id);
+
+          return (
+            <div key={item.id} className="p-3.5 transition hover:bg-zinc-900/30 min-w-0">
+              {/* Header: # Index, Asset & Formatted Nominal */}
+              <div className="flex items-center justify-between gap-2 pb-2 min-w-0 border-b border-zinc-900">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="font-mono text-xs font-bold text-zinc-500 shrink-0">
+                    #{item.index}
+                  </span>
+                  <span
+                    className={`inline-flex shrink-0 items-center rounded px-1.5 py-0.2 font-sans text-[10px] font-medium ${
+                      isNative
+                        ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                        : 'border border-zinc-700 bg-zinc-800 text-zinc-300'
+                    }`}
+                  >
+                    {isNative ? 'Native' : 'ERC-20'}
+                  </span>
+                  <span className="font-sans font-semibold text-xs text-zinc-100 truncate min-w-0">
+                    {item.name ? `${item.name} (${item.symbol})` : item.symbol}
+                  </span>
+                </div>
+
+                <div className="text-right shrink-0">
+                  <span
+                    className="font-mono text-xs sm:text-sm font-bold text-zinc-100"
+                    title={val.exact}
+                  >
+                    {item.formattedAmount !== null
+                      ? `${val.display} ${item.symbol}`
+                      : `${item.rawAmount} raw`}
+                  </span>
+                </div>
+              </div>
+
+              {/* Line "From": Address + Icon-only Copy Button on its OWN row */}
+              <div className="flex items-center justify-between gap-2 pt-2 min-w-0">
+                <span className="font-sans text-xs text-zinc-500 shrink-0 font-medium">From:</span>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span
+                    className="font-mono text-xs text-zinc-200 truncate select-all"
+                    title={item.from}
+                  >
+                    {truncateHashOrAddress(item.from, 6, 4)}
+                  </span>
+                  <CopyButton text={item.from} label="sender address" iconOnly />
+                </div>
+              </div>
+
+              {/* Line "To": Address + Icon-only Copy Button on its OWN row */}
+              <div className="flex items-center justify-between gap-2 pt-1.5 min-w-0">
+                <span className="font-sans text-xs text-zinc-500 shrink-0 font-medium">To:</span>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span
+                    className="font-mono text-xs text-zinc-200 truncate select-all"
+                    title={item.to || 'Contract Deployment'}
+                  >
+                    {item.to ? truncateHashOrAddress(item.to, 6, 4) : 'Contract Deployment'}
+                  </span>
+                  {item.to && <CopyButton text={item.to} label="recipient address" iconOnly />}
+                </div>
+              </div>
+
+              {/* Row Detail Toggle */}
+              <div className="flex items-center justify-between pt-2 border-t border-zinc-900/80 mt-2 text-[11px] font-sans">
+                <button
+                  type="button"
+                  onClick={() => toggleRowDetail(item.id)}
+                  className="text-zinc-400 hover:text-zinc-200 transition focus:outline-none"
+                >
+                  {isRowOpen ? 'Hide details' : 'Details'}
+                </button>
+
+                {val.isApproximate && item.formattedAmount !== null && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-zinc-500">Copy exact:</span>
+                    <CopyButton text={val.exact} label="exact amount" iconOnly />
+                  </div>
+                )}
+              </div>
+
+              {/* Expanded Forensic Detail Drawer on Mobile */}
+              {isRowOpen && (
+                <div className="mt-2 p-2.5 rounded bg-zinc-900/60 border border-zinc-800 text-xs flex flex-col gap-1.5 min-w-0 font-sans">
+                  {!isNative && item.tokenAddress && (
+                    <div className="flex items-center justify-between gap-2 min-w-0">
+                      <span className="text-zinc-500 shrink-0 font-medium">Token contract:</span>
+                      <div className="flex items-center gap-1 min-w-0">
+                        <span className="font-mono text-zinc-300 text-[11px] truncate" title={item.tokenAddress}>
+                          {truncateHashOrAddress(item.tokenAddress, 6, 4)}
+                        </span>
+                        <CopyButton text={item.tokenAddress} label="token contract address" iconOnly />
+                      </div>
+                    </div>
+                  )}
+
+                  {item.logIndex !== undefined && (
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-zinc-500 font-medium">Log index:</span>
+                      <span className="font-mono text-zinc-300">#{item.logIndex}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-zinc-800">
+                    <span className="text-zinc-500 font-medium">Exact amount:</span>
+                    <div className="flex items-center gap-1 min-w-0">
+                      <span className="font-mono text-xs text-zinc-200 select-all truncate" title={val.exact}>
+                        {val.exact} {item.symbol}
+                      </span>
+                      <CopyButton text={val.exact} label="exact amount" iconOnly />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Mobile Expand / Collapse Button */}
+        {hasMore && (
+          <div className="p-3 text-center bg-zinc-950/80">
+            <button
+              type="button"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 font-sans text-xs font-semibold text-zinc-200 transition hover:bg-zinc-800 hover:text-white focus:outline-none focus:ring-1 focus:ring-zinc-400"
+            >
+              <span>
+                {isExpanded
+                  ? 'Show first 5'
+                  : `Show all ${totalMovements} transfers`}
+              </span>
+              <span className="font-mono text-[11px]">{isExpanded ? '▲' : '▼'}</span>
+            </button>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }

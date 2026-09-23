@@ -3,6 +3,7 @@
 import React from 'react';
 import type { TransactionLookupResponse } from '../lib/api-types';
 import { TransactionSummary } from './TransactionSummary';
+import { MovingAssetsSummary } from './MovingAssetsSummary';
 import { AssetTransfers } from './AssetTransfers';
 import { ApprovalDetails } from './ApprovalDetails';
 import { TechnicalDetails } from './TechnicalDetails';
@@ -25,14 +26,17 @@ export function TransactionResultCard({ response }: TransactionResultCardProps) 
   const isPureApproval = !hasTransfers && approvals.length === 1;
 
   return (
-    <article className="w-full overflow-hidden rounded-xl border border-zinc-800/80 bg-zinc-900/60 shadow-xl backdrop-blur-sm">
-      {/* 1. Primary Action & Hero Summary */}
+    <article className="w-full overflow-hidden rounded-xl border border-zinc-800/80 bg-zinc-950 text-zinc-100 shadow-2xl divide-y divide-zinc-800/60">
+      {/* Tier 1: Primary Action & Executive Summary */}
       <TransactionSummary data={data} />
 
-      {/* 2. Asset Transfers - ONLY rendered if there are actual transfers and transaction succeeded */}
+      {/* Tier 2: Moving Assets Summary (Neutral token overview for multi-transfers) */}
+      {!isFailed && hasTransfers && <MovingAssetsSummary data={data} />}
+
+      {/* Tier 3: Sequential Transfer Ledger */}
       {!isFailed && hasTransfers && <AssetTransfers data={data} />}
 
-      {/* 3. Approval Grants - rendered directly without an empty transfer card preceding it */}
+      {/* Tier 3 Continuation: Token Approval Details */}
       {!isFailed && hasApprovals && (
         <ApprovalDetails approvals={approvals} isHeroDisplayingApproval={isPureApproval} />
       )}

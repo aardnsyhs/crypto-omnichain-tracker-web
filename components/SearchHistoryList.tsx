@@ -98,7 +98,7 @@ export function SearchHistoryList({ history, isLoading, onSelect }: SearchHistor
   return (
     <section className="w-full overflow-hidden rounded-xl border border-zinc-800/80 bg-zinc-900/60 shadow-xl backdrop-blur-sm">
       <div className="flex items-center justify-between border-b border-zinc-800/80 px-5 py-4">
-        <h2 className="text-xs font-mono uppercase tracking-wider text-zinc-500">Recent Lookups</h2>
+        <h2 className="text-xs font-sans uppercase tracking-wider text-zinc-400 font-semibold">Recent searches</h2>
         <span className="font-mono text-xs text-zinc-500">
           {dedupedHistory.length} {dedupedHistory.length === 1 ? 'transaction' : 'transactions'}
           {history.length > dedupedHistory.length && (
@@ -108,16 +108,16 @@ export function SearchHistoryList({ history, isLoading, onSelect }: SearchHistor
       </div>
 
       {isLoading && dedupedHistory.length === 0 ? (
-        <div className="py-8 text-center font-mono text-xs text-zinc-500 animate-pulse">
-          Loading history records...
+        <div className="py-8 text-center font-sans text-xs text-zinc-500 animate-pulse">
+          Loading search history...
         </div>
       ) : dedupedHistory.length === 0 ? (
         <div className="py-8 text-center">
-          <p className="font-mono text-xs text-zinc-500">
-            No transactions queried in this session.
+          <p className="font-sans text-xs text-zinc-400">
+            No transactions searched yet in this session.
           </p>
-          <p className="mt-1 font-mono text-[11px] text-zinc-600">
-            Searches performed will automatically record here.
+          <p className="mt-1 font-sans text-[11px] text-zinc-600">
+            Searches performed will automatically appear here.
           </p>
         </div>
       ) : (
@@ -135,10 +135,10 @@ export function SearchHistoryList({ history, isLoading, onSelect }: SearchHistor
                 {getStatusBadge(item)}
                 {item.cacheHit && (
                   <span
-                    title="Served from low-latency Redis cache"
-                    className="inline-flex shrink-0 items-center rounded bg-emerald-500/10 px-1 py-0.5 font-mono text-[10px] text-emerald-400"
+                    title="Served from Redis cache"
+                    className="inline-flex shrink-0 items-center rounded bg-emerald-500/10 px-1.5 py-0.5 font-sans text-[10px] text-emerald-400"
                   >
-                    cached
+                    cache
                   </span>
                 )}
               </div>
@@ -150,9 +150,9 @@ export function SearchHistoryList({ history, isLoading, onSelect }: SearchHistor
                 <button
                   type="button"
                   onClick={() => onSelect(item.chain as SupportedChain, item.transactionHash)}
-                  className="shrink-0 rounded-md border border-zinc-700/80 bg-zinc-800 px-2.5 py-1 font-mono text-xs font-medium text-zinc-200 transition hover:border-zinc-600 hover:bg-zinc-700 hover:text-white"
+                  className="shrink-0 rounded-md border border-zinc-700/80 bg-zinc-800 px-2.5 py-1 font-sans text-xs font-medium text-zinc-200 transition hover:border-zinc-600 hover:bg-zinc-700 hover:text-white"
                 >
-                  Re-query
+                  Search again
                 </button>
               </div>
             </div>

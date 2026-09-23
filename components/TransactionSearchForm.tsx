@@ -84,12 +84,12 @@ export function TransactionSearchForm({
         <button
           type="button"
           onClick={() => onToggleCondensed?.(false)}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-700/80 bg-zinc-800/80 px-3 py-1.5 font-mono text-xs font-medium text-zinc-200 transition hover:bg-zinc-700 hover:text-white"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-700/80 bg-zinc-800/80 px-3 py-1.5 font-sans text-xs font-medium text-zinc-200 transition hover:bg-zinc-700 hover:text-white"
         >
           <svg className="h-3.5 w-3.5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <span>New Search</span>
+          <span>New search</span>
         </button>
       </div>
     );

@@ -14,170 +14,130 @@ interface ApprovalDetailsProps {
 export function ApprovalDetails({
   approvals,
   isFailed,
-  isHeroDisplayingApproval = false,
 }: ApprovalDetailsProps) {
   if (!approvals || approvals.length === 0 || isFailed) {
     return null;
   }
 
-  // Deduplicate only when the single approval's owner/spender/allowance is already displayed in hero
-  if (isHeroDisplayingApproval && approvals.length === 1) {
-    const item = approvals[0];
-    return (
-      <div className="border-b border-zinc-800/80 p-5 sm:p-6 min-w-0">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-xs font-mono uppercase tracking-wider text-zinc-400">
-            Token Contract & Log Details
-          </h3>
-          <span className="rounded-full border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 font-mono text-[11px] font-medium text-purple-300">
-            Log #{item.logIndex}
-          </span>
-        </div>
+  const isSingle = approvals.length === 1;
 
-        <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/40 p-4 min-w-0 space-y-3">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between min-w-0">
-            <div className="min-w-0 flex-1">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
-                Target Token Contract
-              </span>
-              <div className="flex items-center justify-between sm:justify-start gap-2 mt-1 min-w-0">
-                <span
-                  className="font-mono text-xs sm:text-sm font-semibold text-zinc-100 truncate min-w-0 select-all"
-                  title={item.tokenAddress}
-                >
-                  {truncateHashOrAddress(item.tokenAddress, 12, 10)}
-                </span>
-                <CopyButton text={item.tokenAddress} label="token contract" className="shrink-0" />
-              </div>
-            </div>
-
-            <div className="text-left sm:text-right min-w-0">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
-                Token Identity
-              </span>
-              <div className="font-mono text-xs text-zinc-300 mt-1">
-                {item.name ? `${item.name} (${item.symbol || '???'})` : item.symbol || 'ERC-20'}
-                {item.decimals !== null && (
-                  <span className="text-zinc-500 ml-1.5">• {item.decimals} decimals</span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-2 border-t border-zinc-800/60 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-zinc-400">
-            <span>Proof Source: EVM Receipt Log ({item.logIndex})</span>
-            <span>Signature: Approval(address,address,uint256)</span>
-          </div>
-        </div>
-
-        <p className="mt-3 text-center font-mono text-[11px] text-zinc-500">
-          ℹ️ Historical allowance grant: Reflects the allowance authorized on-chain in this transaction.
-        </p>
-      </div>
-    );
-  }
-
-  // Multiple Approvals: Render structured list of all approval items
   return (
-    <div className="border-b border-zinc-800/80 p-5 sm:p-6 min-w-0">
-      <div className="mb-4 flex items-center justify-between">
+    <section aria-label="Token approvals" className="p-5 sm:p-6 min-w-0">
+      <div className="mb-4 flex items-center justify-between min-w-0">
         <div className="flex items-center gap-2">
-          <h3 className="text-xs font-mono uppercase tracking-wider text-zinc-400">
-            Token Approvals
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 font-sans">
+            {isSingle ? 'Token approval' : 'Token approvals'}
           </h3>
-          <span className="rounded-full border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 font-mono text-[11px] font-medium text-purple-300">
-            {approvals.length} Grants
+          <span className="rounded border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 font-mono text-[11px] font-medium text-purple-300">
+            {approvals.length} {isSingle ? 'approval' : 'approvals'}
           </span>
         </div>
       </div>
 
-      <div className="divide-y divide-zinc-800/80 rounded-xl border border-zinc-800/80 bg-zinc-950/40 min-w-0">
+      <div className="divide-y divide-zinc-800/60 rounded-lg border border-zinc-800/80 bg-zinc-950/60 min-w-0 overflow-hidden">
         {approvals.map((item, idx) => {
           const val = formatReadableAmount(item.formattedAmount);
 
           return (
             <div
               key={`${item.tokenAddress}-${item.spender}-${item.logIndex}-${idx}`}
-              className="p-4 sm:p-5 min-w-0"
+              className="p-4 sm:p-5 min-w-0 flex flex-col gap-3"
             >
-              {/* Token & Allowance Nominal */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pb-3 min-w-0">
+              {/* Header: Token Name & Allowance Nominal */}
+              <div className="flex flex-wrap items-center justify-between gap-2 min-w-0 pb-2.5 border-b border-zinc-900">
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="inline-flex shrink-0 items-center rounded border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 font-mono text-xs font-semibold text-purple-400">
+                  <span className="inline-flex shrink-0 items-center rounded border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 font-sans text-xs font-semibold text-purple-400">
                     Approval #{idx + 1}
                   </span>
-                  <span className="font-mono text-sm font-bold text-zinc-100 truncate min-w-0">
+                  <span className="font-sans text-sm font-bold text-zinc-100 truncate min-w-0">
                     {item.name ? `${item.name} (${item.symbol || '???'})` : item.symbol || 'ERC-20 Token'}
                   </span>
+                  {item.logIndex !== undefined && (
+                    <span className="font-mono text-xs text-zinc-500">
+                      (Log #{item.logIndex})
+                    </span>
+                  )}
                 </div>
 
-                <div className="min-w-0 text-right">
+                <div className="min-w-0 text-right ml-auto">
                   {item.isRevocation ? (
-                    <span className="inline-flex shrink-0 items-center rounded-md border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 font-mono text-xs font-bold text-rose-300">
-                      Allowance Revoked (0)
+                    <span className="inline-flex shrink-0 items-center rounded border border-rose-500/30 bg-rose-500/10 px-2.5 py-0.5 font-sans text-xs font-bold text-rose-300">
+                      Allowance revoked (0)
                     </span>
                   ) : item.isUnlimited ? (
-                    <span className="inline-flex shrink-0 items-center rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 font-mono text-xs font-bold text-amber-300">
-                      Maximum allowance (2²⁵⁶-1)
+                    <span className="inline-flex shrink-0 items-center rounded border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 font-sans text-xs font-bold text-amber-300">
+                      Maximum allowance (2²⁵⁶ − 1)
                     </span>
                   ) : (
-                    <div>
-                      <div className="font-mono text-sm sm:text-base font-bold text-zinc-100" title={val.exact}>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span className="font-mono text-xs sm:text-sm font-bold text-zinc-100" title={val.exact}>
                         {item.formattedAmount !== null
                           ? `${val.display} ${item.symbol || ''}`
                           : `${item.rawAmount} raw units`}
-                      </div>
+                      </span>
                       {val.isApproximate && item.formattedAmount !== null && (
-                        <div className="text-[11px] font-mono text-zinc-400" title={val.exact}>
-                          Exact: {val.exact} {item.symbol || ''}
-                        </div>
+                        <CopyButton
+                          text={val.exact}
+                          label="exact allowance"
+                          iconOnly
+                          className="shrink-0"
+                        />
                       )}
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Spender & Owner Callout */}
-              <div className="mt-2 grid grid-cols-1 gap-2.5 rounded-lg border border-purple-500/20 bg-purple-500/5 p-3 min-w-0 sm:grid-cols-2">
-                <div className="min-w-0">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-purple-300 block">
-                    Approved Spender (Beneficiary)
+              {/* Explicitly Display: Approved spender and Token owner with full copy buttons */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs min-w-0">
+                {/* Approved Spender */}
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <span className="font-sans text-[11px] text-zinc-500 font-medium">
+                    Approved spender:
                   </span>
-                  <div className="flex items-center justify-between sm:justify-start gap-2 mt-1 min-w-0">
+                  <div className="flex items-center justify-between sm:justify-start gap-1.5 min-w-0">
                     <span
-                      className="font-mono text-xs sm:text-sm font-bold text-zinc-100 truncate min-w-0 select-all"
+                      className="font-mono text-zinc-200 font-medium truncate min-w-0 select-all"
                       title={item.spender}
                     >
-                      {truncateHashOrAddress(item.spender, 10, 8)}
+                      {truncateHashOrAddress(item.spender, 6, 4)}
                     </span>
-                    <CopyButton text={item.spender} label="spender" className="shrink-0" />
+                    <CopyButton text={item.spender} label="approved spender address" iconOnly />
                   </div>
                 </div>
 
-                <div className="min-w-0">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
-                    Owner (Grantor)
+                {/* Token Owner */}
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <span className="font-sans text-[11px] text-zinc-500 font-medium">
+                    Token owner:
                   </span>
-                  <div className="flex items-center justify-between sm:justify-start gap-2 mt-1 min-w-0">
+                  <div className="flex items-center justify-between sm:justify-start gap-1.5 min-w-0">
                     <span
-                      className="font-mono text-xs text-zinc-200 truncate min-w-0 select-all"
+                      className="font-mono text-zinc-300 font-medium truncate min-w-0 select-all"
                       title={item.owner}
                     >
-                      {truncateHashOrAddress(item.owner, 10, 8)}
+                      {truncateHashOrAddress(item.owner, 6, 4)}
                     </span>
-                    <CopyButton text={item.owner} label="owner" className="shrink-0" />
+                    <CopyButton text={item.owner} label="token owner address" iconOnly />
                   </div>
                 </div>
               </div>
 
-              {/* Token Contract Reference */}
-              <div className="mt-2.5 flex items-center justify-between text-xs font-mono text-zinc-400 min-w-0">
-                <span className="text-[11px] text-zinc-400 shrink-0">Token Contract:</span>
+              {/* Token Contract Reference & Log Proof */}
+              <div className="pt-2 border-t border-zinc-900 flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-400 min-w-0">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="text-zinc-300 text-[11px] truncate min-w-0" title={item.tokenAddress}>
-                    {truncateHashOrAddress(item.tokenAddress, 10, 8)}
+                  <span className="text-[11px] font-sans text-zinc-500 shrink-0">Token contract:</span>
+                  <span className="font-mono text-zinc-400 text-xs truncate min-w-0 select-all" title={item.tokenAddress}>
+                    {truncateHashOrAddress(item.tokenAddress, 6, 4)}
                   </span>
-                  <CopyButton text={item.tokenAddress} label="contract" className="shrink-0" />
+                  <CopyButton text={item.tokenAddress} label="token contract address" iconOnly />
+                  {item.decimals !== null && (
+                    <span className="text-zinc-600 font-mono text-[11px] hidden xs:inline">• {item.decimals} decimals</span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 font-sans ml-auto">
+                  <span>Proof: EVM receipt log ({item.logIndex})</span>
                 </div>
               </div>
             </div>
@@ -185,9 +145,9 @@ export function ApprovalDetails({
         })}
       </div>
 
-      <p className="mt-3 text-center font-mono text-[11px] text-zinc-500">
-        ℹ️ Historical allowance grant: Reflects the allowance authorized on-chain in this transaction.
+      <p className="mt-3 text-center font-sans text-[11px] text-zinc-500">
+        Historical approval recorded in this transaction. The current allowance may differ.
       </p>
-    </div>
+    </section>
   );
 }
