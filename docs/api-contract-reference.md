@@ -15,6 +15,7 @@
 > 1. **Nullable Timestamp:** `data.timestamp` is typed as `string | null`.
 > 2. **Status 'unknown':** `data.status` includes `'unknown'` alongside `'confirmed'`, `'failed'`, and `'pending'`.
 > 3. **Search History Separation:** In `GET /v1/history`, `txStatus` is introduced as `'confirmed' | 'failed' | 'pending' | 'unknown'`. Older history records default to `'unknown'`.
+> 4. **Token Metadata Fallback:** When token metadata calls fail or non-standard tokens omit standard methods, `tokenTransfers[].symbol`, `tokenTransfers[].decimals`, `approvals[].symbol`, and `approvals[].decimals` are returned as `null`. Consumers must handle `null` values gracefully and fall back to raw amounts or token address labels.
 
 ---
 
