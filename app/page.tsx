@@ -19,6 +19,7 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [result, setResult] = useState<TransactionLookupResponse | null>(null);
   const [error, setError] = useState<ApiClientError | Error | null>(null);
+  const [isFormCondensed, setIsFormCondensed] = useState<boolean>(false);
 
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState<boolean>(true);
@@ -49,6 +50,7 @@ export default function HomePage() {
       setIsLoading(true);
       setError(null);
       setResult(null);
+      setIsFormCondensed(false);
 
       // Sync URL search params
       if (typeof window !== 'undefined') {
@@ -70,6 +72,7 @@ export default function HomePage() {
         }
 
         setResult(response);
+        setIsFormCondensed(true);
       } catch (err) {
         if (searchId !== latestSearchIdRef.current) {
           return;
@@ -128,6 +131,8 @@ export default function HomePage() {
             initialChain={selectedChain}
             initialHash={transactionHash}
             isLoading={isLoading}
+            isCondensed={isFormCondensed && Boolean(result) && !isLoading}
+            onToggleCondensed={setIsFormCondensed}
             onSubmit={(chain, hash) => void executeLookup(chain, hash)}
           />
         </section>

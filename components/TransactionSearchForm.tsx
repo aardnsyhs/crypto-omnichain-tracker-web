@@ -2,13 +2,15 @@
 
 import React, { useState } from 'react';
 import type { SupportedChain } from '../lib/api-types';
-import { validateLookupInput } from '../lib/validation';
+import { SUPPORTED_CHAINS, truncateHashOrAddress, validateLookupInput } from '../lib/validation';
 import { ChainSelect } from './ChainSelect';
 
 interface TransactionSearchFormProps {
   initialChain?: SupportedChain;
   initialHash?: string;
   isLoading: boolean;
+  isCondensed?: boolean;
+  onToggleCondensed?: (condensed: boolean) => void;
   onSubmit: (chain: SupportedChain, transactionHash: string) => void;
 }
 
@@ -16,6 +18,8 @@ export function TransactionSearchForm({
   initialChain = 'ethereum',
   initialHash = '',
   isLoading,
+  isCondensed = false,
+  onToggleCondensed,
   onSubmit,
 }: TransactionSearchFormProps) {
   const [chain, setChain] = useState<SupportedChain>(initialChain);
@@ -62,6 +66,34 @@ export function TransactionSearchForm({
     setHash('');
     setClientError(null);
   };
+
+  if (isCondensed && hash) {
+    const chainConfig = SUPPORTED_CHAINS.find((c) => c.id === chain) || SUPPORTED_CHAINS[0];
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-800/80 bg-zinc-900/60 p-3.5 shadow-lg backdrop-blur-sm sm:px-5">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-zinc-700/60 bg-zinc-950 px-2.5 py-1 font-mono text-xs text-zinc-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            <span>{chainConfig.name}</span>
+          </span>
+          <span className="truncate font-mono text-xs text-zinc-400 select-all" title={hash}>
+            {truncateHashOrAddress(hash, 12, 10)}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onToggleCondensed?.(false)}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-700/80 bg-zinc-800/80 px-3 py-1.5 font-mono text-xs font-medium text-zinc-200 transition hover:bg-zinc-700 hover:text-white"
+        >
+          <svg className="h-3.5 w-3.5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <span>New Search</span>
+        </button>
+      </div>
+    );
+  }
 
   return (
     <form

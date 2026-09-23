@@ -125,32 +125,32 @@ export function SearchHistoryList({ history, isLoading, onSelect }: SearchHistor
           {dedupedHistory.map((item) => (
             <div
               key={item.id}
-              className="flex flex-col gap-2 px-5 py-3 transition hover:bg-zinc-800/30 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-2.5 px-3.5 py-3 transition hover:bg-zinc-800/30 sm:px-5 sm:flex-row sm:items-center sm:justify-between min-w-0"
             >
-              <div className="flex items-center gap-2.5">
+              <div className="flex flex-wrap items-center gap-2 min-w-0">
                 {getChainBadge(item.chain)}
-                <span className="font-mono text-xs text-zinc-200" title={item.transactionHash}>
-                  {truncateHashOrAddress(item.transactionHash, 8, 6)}
+                <span className="font-mono text-xs text-zinc-200 truncate min-w-0" title={item.transactionHash}>
+                  {truncateHashOrAddress(item.transactionHash, 6, 4)}
                 </span>
                 {getStatusBadge(item)}
                 {item.cacheHit && (
                   <span
                     title="Served from low-latency Redis cache"
-                    className="inline-flex items-center font-mono text-[10px] text-emerald-400"
+                    className="inline-flex shrink-0 items-center rounded bg-emerald-500/10 px-1 py-0.5 font-mono text-[10px] text-emerald-400"
                   >
                     cached
                   </span>
                 )}
               </div>
 
-              <div className="flex items-center justify-between gap-3 sm:justify-end">
-                <span className="font-mono text-[11px] text-zinc-500" title={item.searchedAt}>
+              <div className="flex items-center justify-between gap-3 sm:justify-end min-w-0">
+                <span className="font-mono text-[11px] text-zinc-500 truncate" title={item.searchedAt}>
                   {formatTimestamp(item.searchedAt)}
                 </span>
                 <button
                   type="button"
                   onClick={() => onSelect(item.chain as SupportedChain, item.transactionHash)}
-                  className="rounded-md border border-zinc-700/80 bg-zinc-800 px-2.5 py-1 font-mono text-xs font-medium text-zinc-200 transition hover:border-zinc-600 hover:bg-zinc-700 hover:text-white"
+                  className="shrink-0 rounded-md border border-zinc-700/80 bg-zinc-800 px-2.5 py-1 font-mono text-xs font-medium text-zinc-200 transition hover:border-zinc-600 hover:bg-zinc-700 hover:text-white"
                 >
                   Re-query
                 </button>

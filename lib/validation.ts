@@ -120,3 +120,64 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     return false;
   }
 }
+
+export interface FormattedAmountResult {
+  display: string;
+  exact: string;
+  isApproximate: boolean;
+}
+
+/**
+ * Formats token or coin amounts for human readability without loss of precision.
+ * - Genuine zeroes display as '0'.
+ * - Very small positive values below the threshold display as '< 0.000001'.
+ * - Rounded values are prepended with '≈ '.
+ * - Exact precision is always retained in the returned 'exact' property.
+ */
+export function formatReadableAmount(
+  amount: string | number | null | undefined,
+  maxDecimals = 6,
+): FormattedAmountResult {
+  if (amount === null || amount === undefined || amount === '') {
+    return { display: '0', exact: '0', isApproximate: false };
+  }
+
+  const str = String(amount).trim();
+  // Genuine zero check: '0', '0.0', '0.000000', etc.
+  if (/^0+(\.0+)?$/.test(str) || str === '') {
+    return { display: '0', exact: '0', isApproximate: false };
+  }
+
+  const parts = str.split('.');
+  if (parts.length === 1) {
+    return { display: str, exact: str, isApproximate: false };
+  }
+
+  const [intPart, fracPart] = parts;
+  if (!fracPart) {
+    return { display: intPart, exact: str, isApproximate: false };
+  }
+
+  const minThresholdDisplay = `0.${'0'.repeat(maxDecimals - 1)}1`;
+  const sliced = fracPart.slice(0, maxDecimals).replace(/0+$/, '');
+
+  // If integer part is 0 and the first maxDecimals are all zero, but fracPart is non-zero
+  if (intPart === '0' && sliced === '') {
+    return {
+      display: `< ${minThresholdDisplay}`,
+      exact: str,
+      isApproximate: true,
+    };
+  }
+
+  if (fracPart.length <= maxDecimals) {
+    return { display: str, exact: str, isApproximate: false };
+  }
+
+  const displayVal = sliced ? `${intPart}.${sliced}` : intPart;
+  return {
+    display: `≈ ${displayVal}`,
+    exact: str,
+    isApproximate: true,
+  };
+}
