@@ -2,27 +2,19 @@
 
 Frontend web application for **Crypto Omnichain Transaction Tracker**, built with Next.js (App Router), React 19, TypeScript strict mode, and Tailwind CSS.
 
-## Project Context
+## Features & User Experience
 
-This repository (`crypto-omnichain-tracker-web`) contains the frontend web application only. The backend API lives in a separate repository (`crypto-omnichain-tracker-api`).
-
-### Architectural Boundary
-
-- The backend owns the canonical API contract.
-- The frontend consumes the contract documented in [docs/api-contract-reference.md](docs/api-contract-reference.md).
-- The frontend **never** imports backend source code directly.
-- All future API communication is isolated within `lib/api-client.ts`.
-- The API base URL is configured exclusively via `NEXT_PUBLIC_API_BASE_URL`.
-
-## Current Phase: Milestone 1B (Frontend Foundation)
-
-Milestone 1B establishes the Next.js App Router scaffold, Tailwind CSS integration, strict TypeScript configuration, code-quality tooling, and the typed API client skeleton.
-
-Interactive transaction lookup, chain selectors, search history, and live API communication are deferred to Milestone 4.
+- **Transaction Story Overview:** Narrative explanation of transaction outcomes, execution status, and coverage indicators.
+- **Asset Transfers:** Clean breakdown of native transfers and ERC-20 token movements with origin and destination addresses.
+- **Token Approvals:** Visual allowances card displaying maximum allowance (unlimited) or finite amounts, alongside a historical scope disclaimer.
+- **Technical Ledger:** Collapsible accordion containing proof details, native transaction value, gas fee breakdown, calldata input, and external block explorer links.
+- **Deduplicated History:** Clean session search history deduplicated by chain and transaction hash with execution-aware badges (`Confirmed`, `Failed`, `Pending`, `Unknown`).
+- **Deep Linking & Sharing:** Share button with clipboard copy feedback and URL parameter synchronization (`?chain=...&tx=...`).
+- **Race Condition Protection:** Monotonic request sequence tracking prevents out-of-order asynchronous responses from overwriting newer searches.
 
 ## Prerequisites
 
-- Node.js >= 20.0.0 (tested on Node v24)
+- Node.js >= 20.0.0
 - npm >= 10.0.0
 
 ## Setup and Development
@@ -52,7 +44,6 @@ Interactive transaction lookup, chain selectors, search history, and live API co
 - `npm run start` — Run production server
 - `npm run lint` — Run ESLint check
 - `npm run format` — Format code with Prettier
-- `npm run format:check` — Check code formatting
 - `npm run typecheck` — Run TypeScript type checking (`tsc --noEmit`)
 
 ## Documentation

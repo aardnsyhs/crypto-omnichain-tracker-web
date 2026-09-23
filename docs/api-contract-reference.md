@@ -1,68 +1,36 @@
-# Canonical API Contract
+# Canonical API Contract Reference
 
-**Repository:** `crypto-omnichain-tracker-api`
-**Contract Version:** 1.0.0
-**Ownership:** Backend (`crypto-omnichain-tracker-api`) owns this document. Frontend (`crypto-omnichain-tracker-web`) consumes this contract without importing backend source code.
-**Implementation Status in Milestone 1A:** **Documentation only.** No transaction controllers, routes, DTOs, or services are implemented in the Milestone 1A source code.
+**Repository:** `crypto-omnichain-tracker-web` (Mirror of canonical backend contract)  
+**Contract Version:** 1.1.0  
+**Ownership:** Backend (`crypto-omnichain-tracker-api`) owns the canonical specification.  
+**Implementation Status:** Active — Transaction Story (ERC-20 transfers, approvals, deterministic narrative, and status reconciliation).
 
 ---
 
-## 1. Versioning and Route Conventions
+## 1. Migration & Evolution Notes (v1.0.0 -> v1.1.0)
 
-1. **API Prefix:** All business endpoints use the `/v1` prefix (e.g., `/v1/transactions/lookup`, `/v1/history`, `/v1/stats`).
-2. **Health Endpoints:** Infrastructure health checks remain unversioned:
-   - `GET /health/live`
-   - `GET /health/ready`
-3. **Contract Evolution:** Any breaking change requires a documentation update, version bump or migration note, and coordinated testing with the frontend.
+> [!WARNING]
+> **Consumer Changes:**
+>
+> 1. **Nullable Timestamp:** `data.timestamp` is typed as `string | null`.
+> 2. **Status 'unknown':** `data.status` includes `'unknown'` alongside `'confirmed'`, `'failed'`, and `'pending'`.
+> 3. **Search History Separation:** In `GET /v1/history`, `txStatus` is introduced as `'confirmed' | 'failed' | 'pending' | 'unknown'`. Older history records default to `'unknown'`.
 
 ---
 
 ## 2. Supported EVM Chains
 
-The `chain` parameter must be strictly one of the following lowercase enum strings:
-
-| Enum Value | Network Name     | Native Symbol |
-| :--------- | :--------------- | :------------ |
-| `ethereum` | Ethereum Mainnet | ETH           |
-| `bsc`      | BNB Smart Chain  | BNB           |
-| `polygon`  | Polygon PoS      | POL (MATIC)   |
+| Enum Value | Network Name     | Native Symbol | Expected Chain ID |
+| :--------- | :--------------- | :------------ | :---------------- |
+| `ethereum` | Ethereum Mainnet | ETH           | 1 (`0x1`)         |
+| `bsc`      | BNB Smart Chain  | BNB           | 56 (`0x38`)       |
+| `polygon`  | Polygon PoS      | POL (MATIC)   | 137 (`0x89`)      |
 
 ---
 
 ## 3. Transaction Lookup Endpoint
 
 ### `POST /v1/transactions/lookup`
-
-Looks up a single EVM transaction hash on the specified chain.
-
-#### Request Headers
-
-```http
-Content-Type: application/json
-Accept: application/json
-```
-
-#### Request Body
-
-```json
-{
-  "chain": "ethereum",
-  "transactionHash": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-}
-```
-
-#### Request Field Specifications
-
-| Field             | Type     | Required | Validation Rules                             | Description                                           |
-| :---------------- | :------- | :------- | :------------------------------------------- | :---------------------------------------------------- |
-| `chain`           | `string` | Yes      | Must be one of: `ethereum`, `bsc`, `polygon` | Targeted EVM blockchain                               |
-| `transactionHash` | `string` | Yes      | Must match `^0x[0-9a-fA-F]{64}$`             | 0x-prefixed 64-character hexadecimal transaction hash |
-
----
-
-### Successful Response (200 OK)
-
-Returned when the transaction hash exists on the selected network and normalized data was retrieved either from Redis cache or the upstream provider.
 
 ```json
 {
@@ -84,94 +52,46 @@ Returned when the transaction hash exists on the selected network and normalized
     },
     "blockNumber": "12345678",
     "timestamp": "2026-09-06T05:00:00.000Z",
-    "explorerUrl": "https://etherscan.io/tx/0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    "explorerUrl": "https://etherscan.io/tx/0x0123...",
+    "fetchedAt": "2026-09-23T14:40:00.000Z",
+    "explanation": "Transferred 1.5 ETH from 0x1234... to 0xabcd....",
+    "coverage": "complete",
+    "coverageReasons": [],
+    "actions": [],
+    "tokenTransfers": [],
+    "approvals": []
   },
   "meta": {
     "requestId": "c1f516d0-a35b-4c27-91fa-bf1447dbb13b",
     "cache": {
-      "hit": true
+      "hit": false
     }
   }
 }
 ```
 
-#### Response Data Fields
-
-- `data.transactionHash`: Canonical lowercase 0x-prefixed 64-character hex hash.
-- `data.chain`: The requested chain identifier (`ethereum`, `bsc`, `polygon`).
-- `data.status`: Transaction status string (`confirmed`, `failed`, or `pending`).
-- `data.from`: Sender EVM address.
-- `data.to`: Recipient or contract address (null if contract deployment).
-- `data.value`: Object containing `raw` wei string, `formatted` decimal string, and native `symbol`.
-- `data.fee`: Object containing `raw` wei string, `formatted` decimal string, and native `symbol`.
-- `data.blockNumber`: Block height as string.
-- `data.timestamp`: ISO 8601 UTC timestamp.
-- `data.explorerUrl`: Direct URL to external block explorer.
-- `meta.requestId`: UUID assigned to this request for tracing.
-- `meta.cache.hit`: Boolean indicating if result was served from Redis cache-aside.
-
 ---
 
-### Standard Error Response Envelope
+## 4. History Endpoint
 
-All error responses return a standardized, stable JSON envelope. Stack traces, internal database details, Redis connection strings, and provider API keys are never exposed.
+### `GET /v1/history`
 
 ```json
 {
-  "error": {
-    "code": "ERROR_CODE_STRING",
-    "message": "Human-readable description of the error.",
-    "requestId": "c1f516d0-a35b-4c27-91fa-bf1447dbb13b"
+  "data": [
+    {
+      "id": "123e4567-e89b-12d3-a456-426614174001",
+      "transactionHash": "0x0123...",
+      "chain": "ethereum",
+      "outcome": "success",
+      "txStatus": "confirmed",
+      "cacheHit": true,
+      "searchedAt": "2026-09-23T14:40:00.000Z"
+    }
+  ],
+  "meta": {
+    "total": 1,
+    "sessionId": "a8f5..."
   }
 }
 ```
-
----
-
-### Documented Error Status Codes & Mappings
-
-| HTTP Status                 | Error Code                 | Trigger Condition                                                                  |
-| :-------------------------- | :------------------------- | :--------------------------------------------------------------------------------- |
-| **400 Bad Request**         | `INVALID_TRANSACTION_HASH` | The provided hash does not match `0x` + 64 hex characters.                         |
-| **400 Bad Request**         | `UNSUPPORTED_CHAIN`        | The provided chain is not `ethereum`, `bsc`, or `polygon`.                         |
-| **400 Bad Request**         | `VALIDATION_ERROR`         | Missing required body fields or malformed JSON payload.                            |
-| **404 Not Found**           | `TRANSACTION_NOT_FOUND`    | The transaction hash does not exist or has not been confirmed on the chosen chain. |
-| **429 Too Many Requests**   | `RATE_LIMIT_EXCEEDED`      | Client has exceeded public API lookup rate limits.                                 |
-| **502 Bad Gateway**         | `UPSTREAM_PROVIDER_ERROR`  | Blockchair returned an unrecoverable 5xx error or invalid payload.                 |
-| **502 Bad Gateway**         | `UPSTREAM_TIMEOUT`         | Upstream provider request exceeded configured deadline.                            |
-| **503 Service Unavailable** | `UPSTREAM_RATE_LIMITED`    | Upstream provider quota was exhausted.                                             |
-
----
-
-## 4. Unversioned Health Probes
-
-### `GET /health/live`
-
-- **Purpose:** Liveness check to confirm API process is running.
-- **HTTP Status:** `200 OK`
-- **Response:**
-  ```json
-  {
-    "status": "ok",
-    "uptimeSeconds": 120,
-    "timestamp": "2026-09-06T06:12:00.000Z"
-  }
-  ```
-
-### `GET /health/ready`
-
-- **Purpose:** Readiness check for routing traffic.
-- **HTTP Status (Milestone 1A):** `200 OK`
-- **Response:**
-  ```json
-  {
-    "status": "degraded",
-    "checks": {
-      "api": "ready",
-      "database": "not_checked",
-      "redis": "not_checked"
-    },
-    "phase": "milestone-1a"
-  }
-  ```
-  _(In Milestone 1A, this honestly reflects that database and cache dependencies are not yet checked or integrated)._

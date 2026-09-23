@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { HistoryItem, SupportedChain } from '../lib/api-types';
 import { truncateHashOrAddress, formatTimestamp } from '../lib/validation';
 
@@ -11,30 +11,71 @@ interface SearchHistoryListProps {
 }
 
 export function SearchHistoryList({ history, isLoading, onSelect }: SearchHistoryListProps) {
-  const getOutcomeBadge = (outcome: string) => {
-    switch (outcome) {
-      case 'success':
+  // Deduplicate history items by chain + transactionHash, preserving the most recent record
+  const dedupedHistory = useMemo(() => {
+    const seen = new Set<string>();
+    const result: HistoryItem[] = [];
+
+    for (const item of history) {
+      const key = `${item.chain.toLowerCase()}:${item.transactionHash.toLowerCase()}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push(item);
+      }
+    }
+
+    return result;
+  }, [history]);
+
+  const getStatusBadge = (item: HistoryItem) => {
+    if (item.outcome !== 'success') {
+      switch (item.outcome) {
+        case 'not_found':
+          return (
+            <span className="rounded border border-zinc-800 bg-zinc-950 px-1.5 py-0.5 font-mono text-[10px] font-medium text-zinc-400">
+              Not Found
+            </span>
+          );
+        case 'rate_limited':
+          return (
+            <span className="rounded border border-rose-500/20 bg-rose-500/10 px-1.5 py-0.5 font-mono text-[10px] font-medium text-rose-400">
+              Rate Limited
+            </span>
+          );
+        default:
+          return (
+            <span className="rounded border border-zinc-800 bg-zinc-950 px-1.5 py-0.5 font-mono text-[10px] font-medium text-zinc-400">
+              {item.outcome}
+            </span>
+          );
+      }
+    }
+
+    // Lookup succeeded -> show blockchain execution status
+    switch (item.txStatus) {
+      case 'confirmed':
         return (
           <span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[10px] font-medium text-emerald-400">
-            Success
+            Confirmed
           </span>
         );
-      case 'not_found':
-        return (
-          <span className="rounded border border-zinc-800 bg-zinc-950 px-1.5 py-0.5 font-mono text-[10px] font-medium text-zinc-400">
-            Not Found
-          </span>
-        );
-      case 'rate_limited':
+      case 'failed':
         return (
           <span className="rounded border border-rose-500/20 bg-rose-500/10 px-1.5 py-0.5 font-mono text-[10px] font-medium text-rose-400">
-            Rate Limited
+            Failed
           </span>
         );
+      case 'pending':
+        return (
+          <span className="rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 font-mono text-[10px] font-medium text-amber-400">
+            Pending
+          </span>
+        );
+      case 'unknown':
       default:
         return (
           <span className="rounded border border-zinc-800 bg-zinc-950 px-1.5 py-0.5 font-mono text-[10px] font-medium text-zinc-400">
-            {outcome}
+            Unknown
           </span>
         );
     }
@@ -59,15 +100,18 @@ export function SearchHistoryList({ history, isLoading, onSelect }: SearchHistor
       <div className="flex items-center justify-between border-b border-zinc-800/80 px-5 py-4">
         <h2 className="text-xs font-mono uppercase tracking-wider text-zinc-500">Recent Lookups</h2>
         <span className="font-mono text-xs text-zinc-500">
-          {history.length} {history.length === 1 ? 'record' : 'records'}
+          {dedupedHistory.length} {dedupedHistory.length === 1 ? 'transaction' : 'transactions'}
+          {history.length > dedupedHistory.length && (
+            <span className="text-zinc-600 ml-1">({history.length} searches)</span>
+          )}
         </span>
       </div>
 
-      {isLoading && history.length === 0 ? (
+      {isLoading && dedupedHistory.length === 0 ? (
         <div className="py-8 text-center font-mono text-xs text-zinc-500 animate-pulse">
           Loading history records...
         </div>
-      ) : history.length === 0 ? (
+      ) : dedupedHistory.length === 0 ? (
         <div className="py-8 text-center">
           <p className="font-mono text-xs text-zinc-500">
             No transactions queried in this session.
@@ -78,7 +122,7 @@ export function SearchHistoryList({ history, isLoading, onSelect }: SearchHistor
         </div>
       ) : (
         <div className="divide-y divide-zinc-800/40">
-          {history.map((item) => (
+          {dedupedHistory.map((item) => (
             <div
               key={item.id}
               className="flex flex-col gap-2 px-5 py-3 transition hover:bg-zinc-800/30 sm:flex-row sm:items-center sm:justify-between"
@@ -88,10 +132,10 @@ export function SearchHistoryList({ history, isLoading, onSelect }: SearchHistor
                 <span className="font-mono text-xs text-zinc-200" title={item.transactionHash}>
                   {truncateHashOrAddress(item.transactionHash, 8, 6)}
                 </span>
-                {getOutcomeBadge(item.outcome)}
+                {getStatusBadge(item)}
                 {item.cacheHit && (
                   <span
-                    title="Served from Redis cache"
+                    title="Served from low-latency Redis cache"
                     className="inline-flex items-center font-mono text-[10px] text-emerald-400"
                   >
                     cached

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { SupportedChain, TransactionLookupResponse, HistoryItem } from '../lib/api-types';
 import { ApiClientError } from '../lib/api-errors';
 import { createApiClient } from '../lib/api-client';
@@ -23,6 +23,9 @@ export default function HomePage() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState<boolean>(true);
 
+  // Monotonic search counter to prevent out-of-order race conditions
+  const latestSearchIdRef = useRef<number>(0);
+
   // Fetch session search history
   const fetchHistory = useCallback(async () => {
     try {
@@ -36,9 +39,11 @@ export default function HomePage() {
     }
   }, [apiClient]);
 
-  // Execute lookup
+  // Execute lookup with race-condition handling
   const executeLookup = useCallback(
     async (chain: SupportedChain, hash: string) => {
+      const searchId = ++latestSearchIdRef.current;
+
       setSelectedChain(chain);
       setTransactionHash(hash);
       setIsLoading(true);
@@ -58,11 +63,22 @@ export default function HomePage() {
           chain,
           transactionHash: hash,
         });
+
+        // Discard result if a newer search was initiated
+        if (searchId !== latestSearchIdRef.current) {
+          return;
+        }
+
         setResult(response);
       } catch (err) {
+        if (searchId !== latestSearchIdRef.current) {
+          return;
+        }
         setError(err instanceof Error ? err : new Error(String(err)));
       } finally {
-        setIsLoading(false);
+        if (searchId === latestSearchIdRef.current) {
+          setIsLoading(false);
+        }
         // Refresh session history to reflect current lookup
         void fetchHistory();
       }
@@ -92,17 +108,17 @@ export default function HomePage() {
         <header className="flex flex-col items-center text-center">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-zinc-800/80 bg-zinc-900/60 px-3 py-1 font-mono text-xs text-zinc-400">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            <span>Omnichain EVM Indexer</span>
+            <span>Omnichain Transaction Story Explorer</span>
             <span className="text-zinc-600">•</span>
-            <span className="text-zinc-500">v1.0</span>
+            <span className="text-zinc-500">v1.1</span>
           </div>
 
           <h1 className="text-3xl font-bold tracking-tight text-zinc-100 sm:text-4xl">
-            Transaction Explorer
+            Transaction Story
           </h1>
           <p className="mt-2 max-w-lg text-sm text-zinc-400 leading-relaxed">
-            High-performance EVM ledger query across Ethereum, BNB Smart Chain, and Polygon with
-            Redis cache-aside resolution.
+            Understand transaction intent, token movements, and approval allowances across Ethereum,
+            BNB Smart Chain, and Polygon with verified EVM decoding.
           </p>
         </header>
 
@@ -139,7 +155,7 @@ export default function HomePage() {
 
         {/* Footer */}
         <footer className="mt-6 border-t border-zinc-900 pt-6 text-center font-mono text-[11px] text-zinc-600">
-          <p>Omnichain Transaction Explorer • Next.js & Tailwind CSS • Low Latency Cache</p>
+          <p>Omnichain Transaction Story Explorer • Next.js & Tailwind CSS • Low Latency Cache</p>
         </footer>
       </div>
     </main>
