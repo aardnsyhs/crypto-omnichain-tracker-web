@@ -173,16 +173,24 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
                       <div className="flex items-center justify-end gap-1.5">
                         <span
                           className="font-mono text-xs sm:text-sm font-bold text-zinc-100 truncate"
-                          title={val.exact}
+                          title={item.formattedAmount !== null ? val.exact : item.rawAmount}
                         >
                           {item.formattedAmount !== null
                             ? `${val.display} ${item.symbol}`
-                            : `${item.rawAmount} raw`}
+                            : `${item.rawAmount} (Raw amount, decimals unavailable)`}
                         </span>
                         {val.isApproximate && item.formattedAmount !== null && (
                           <CopyButton
                             text={val.exact}
                             label={`exact ${item.symbol} amount`}
+                            iconOnly
+                            className="shrink-0"
+                          />
+                        )}
+                        {item.formattedAmount === null && (
+                          <CopyButton
+                            text={item.rawAmount}
+                            label={`raw ${item.symbol} amount`}
                             iconOnly
                             className="shrink-0"
                           />
@@ -262,9 +270,15 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
                           <div className="flex items-center gap-2 text-right ml-auto">
                             <span className="text-zinc-500 font-medium">Exact amount:</span>
                             <span className="font-mono font-semibold text-zinc-200 select-all">
-                              {val.exact} {item.symbol}
+                              {item.formattedAmount !== null
+                                ? `${val.exact} ${item.symbol}`
+                                : `${item.rawAmount} (Raw amount, decimals unavailable)`}
                             </span>
-                            <CopyButton text={val.exact} label="exact amount" iconOnly />
+                            <CopyButton
+                              text={item.formattedAmount !== null ? val.exact : item.rawAmount}
+                              label="exact amount"
+                              iconOnly
+                            />
                           </div>
                         </div>
                       </td>
@@ -327,11 +341,11 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
                 <div className="text-right shrink-0">
                   <span
                     className="font-mono text-xs sm:text-sm font-bold text-zinc-100"
-                    title={val.exact}
+                    title={item.formattedAmount !== null ? val.exact : item.rawAmount}
                   >
                     {item.formattedAmount !== null
                       ? `${val.display} ${item.symbol}`
-                      : `${item.rawAmount} raw`}
+                      : `${item.rawAmount} (Raw amount, decimals unavailable)`}
                   </span>
                 </div>
               </div>
@@ -380,6 +394,12 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
                     <CopyButton text={val.exact} label="exact amount" iconOnly />
                   </div>
                 )}
+                {item.formattedAmount === null && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-zinc-500">Copy raw:</span>
+                    <CopyButton text={item.rawAmount} label="raw amount" iconOnly />
+                  </div>
+                )}
               </div>
 
               {/* Expanded Forensic Detail Drawer on Mobile */}
@@ -407,10 +427,16 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
                   <div className="flex items-center justify-between gap-2 pt-1 border-t border-zinc-800">
                     <span className="text-zinc-500 font-medium">Exact amount:</span>
                     <div className="flex items-center gap-1 min-w-0">
-                      <span className="font-mono text-xs text-zinc-200 select-all truncate" title={val.exact}>
-                        {val.exact} {item.symbol}
+                      <span className="font-mono text-xs text-zinc-200 select-all truncate" title={item.formattedAmount !== null ? val.exact : item.rawAmount}>
+                        {item.formattedAmount !== null
+                          ? `${val.exact} ${item.symbol}`
+                          : `${item.rawAmount} (Raw amount, decimals unavailable)`}
                       </span>
-                      <CopyButton text={val.exact} label="exact amount" iconOnly />
+                      <CopyButton
+                        text={item.formattedAmount !== null ? val.exact : item.rawAmount}
+                        label="exact amount"
+                        iconOnly
+                      />
                     </div>
                   </div>
                 </div>

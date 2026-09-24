@@ -49,19 +49,20 @@ export function ChainSelect({ value, onChange, disabled = false }: ChainSelectPr
               type="button"
               onClick={() => !disabled && onChange(chain.id)}
               disabled={disabled}
-              className={`flex items-center justify-center gap-2 rounded-md px-3 py-2 text-xs font-medium transition-all ${
+              className={`flex items-center justify-center gap-1.5 sm:gap-2 rounded-md px-2 sm:px-3 py-2 text-xs font-medium transition-all ${
                 isSelected
                   ? 'border border-zinc-700/80 bg-zinc-900 text-zinc-100 shadow-sm'
                   : 'border border-transparent text-zinc-400 hover:bg-zinc-900/50 hover:text-zinc-200'
-              } disabled:cursor-not-allowed disabled:opacity-50`}
+              } disabled:cursor-not-allowed disabled:opacity-50 min-w-0`}
             >
               <span
-                className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                className={`h-1.5 w-1.5 rounded-full shrink-0 transition-colors ${
                   isSelected ? 'bg-emerald-400' : 'bg-zinc-600'
                 }`}
               />
-              <span className="truncate">{chain.name}</span>
-              <span className="font-mono text-[10px] text-zinc-500">{chain.symbol}</span>
+              <span className="hidden sm:inline truncate">{chain.name}</span>
+              <span className="sm:hidden font-semibold truncate">{chain.symbol}</span>
+              <span className="hidden sm:inline font-mono text-[10px] text-zinc-500">{chain.symbol}</span>
             </button>
           );
         })}

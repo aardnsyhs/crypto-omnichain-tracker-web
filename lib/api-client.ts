@@ -2,6 +2,7 @@ import type {
   TransactionLookupRequest,
   TransactionLookupResponse,
   HistoryListResponse,
+  OverviewResponse,
   ApiErrorPayload,
 } from './api-types';
 import { ConfigurationError, ApiClientError } from './api-errors';
@@ -113,6 +114,37 @@ export class ApiClient {
     }
 
     return (await response.json()) as HistoryListResponse;
+  }
+
+  /**
+   * Fetches market prices, 24h changes, latest block info, and suggested gas prices
+   * across supported EVM networks.
+   */
+  public async getOverview(): Promise<OverviewResponse> {
+    const url = `${this.baseUrl}/v1/overview`;
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+        },
+        credentials: 'include',
+      });
+    } catch (networkError) {
+      throw new ApiClientError(0, {
+        code: 'NETWORK_ERROR',
+        message: `Unable to load market and network overview from ${this.baseUrl}. ${(networkError as Error).message}`,
+        requestId: '',
+      });
+    }
+
+    if (!response.ok) {
+      await this.handleErrorResponse(response);
+    }
+
+    return (await response.json()) as OverviewResponse;
   }
 
   private async handleErrorResponse(response: Response): Promise<never> {

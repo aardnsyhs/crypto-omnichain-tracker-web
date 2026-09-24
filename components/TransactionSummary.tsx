@@ -93,17 +93,22 @@ export function TransactionSummary({ data }: TransactionSummaryProps) {
     }
 
     if (isMultiTransfer) {
-      const uniqueAssets = Array.from(
-        new Set([
-          hasNativeValue ? data.value.symbol : null,
-          ...tokenTransfers.map((t) => t.symbol),
-        ].filter(Boolean)),
-      );
+      const uniqueAssetKeys = new Set<string>();
+      if (hasNativeValue) {
+        uniqueAssetKeys.add(`${data.chain}:native`);
+      }
+      tokenTransfers.forEach((t) => {
+        const key = t.tokenAddress
+          ? `${data.chain}:${t.tokenAddress.toLowerCase()}`
+          : `${data.chain}:unknown:${(t.symbol || 'token').toLowerCase()}`;
+        uniqueAssetKeys.add(key);
+      });
+      const uniqueCount = uniqueAssetKeys.size;
       return `${totalTransfers} asset ${totalTransfers === 1 ? 'movement' : 'movements'}${
         approvals.length > 0
           ? ` and ${approvals.length} token ${approvals.length === 1 ? 'approval' : 'approvals'}`
           : ''
-      } recorded on-chain across ${uniqueAssets.length} unique ${uniqueAssets.length === 1 ? 'asset' : 'assets'}.`;
+      } recorded on-chain across ${uniqueCount} unique ${uniqueCount === 1 ? 'asset' : 'assets'}.`;
     }
 
     if (isPureApproval) {

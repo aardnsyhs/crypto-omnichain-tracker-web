@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import type { TransactionData, TokenTransferItem } from '../lib/api-types';
-import { formatReadableAmount, formatUnitsToExactDecimal } from '../lib/validation';
+import { formatReadableAmount, formatUnitsToExactDecimal, truncateHashOrAddress } from '../lib/validation';
 import { CopyButton } from './CopyButton';
 
 interface MovingAssetsSummaryProps {
@@ -16,7 +16,8 @@ interface AssetSummaryItem {
   name: string;
   count: number;
   totalRaw: bigint;
-  decimals: number;
+  decimals: number | null;
+  hasKnownDecimals: boolean;
   exactVolume: string;
   displayVolume: string;
   isNative: boolean;
@@ -35,7 +36,7 @@ export function MovingAssetsSummary({ data }: MovingAssetsSummaryProps) {
     return null;
   }
 
-  // Token identity strictly follows chain and contract address
+  // Token identity strictly follows chain and contract address (native as distinct)
   const assetMap = new Map<string, AssetSummaryItem>();
 
   // 1. Process Native ETH with precise BigInt representation
@@ -45,46 +46,70 @@ export function MovingAssetsSummary({ data }: MovingAssetsSummaryProps) {
     const exactVolume = formatUnitsToExactDecimal(rawVal, decimals);
     const formatted = formatReadableAmount(exactVolume);
 
-    assetMap.set('native', {
-      id: 'native',
+    assetMap.set(`${data.chain}:native`, {
+      id: `${data.chain}:native`,
       tokenAddress: null,
       symbol: data.value.symbol,
       name: 'Native ' + data.value.symbol,
       count: 1,
       totalRaw: rawVal,
       decimals,
+      hasKnownDecimals: true,
       exactVolume,
       displayVolume: formatted.display,
       isNative: true,
     });
   }
 
-  // 2. Process ERC-20 transfers - Grouping strictly by token contract address with BigInt summation
+  // 2. Process ERC-20 transfers - Grouping strictly by chain and token contract address
   tokenTransfers.forEach((tx: TokenTransferItem) => {
-    // Unique key is tokenAddress.toLowerCase() to ensure distinct tokens (e.g. MORPHO vs fwMORPHO) are never merged
     const key = tx.tokenAddress
-      ? tx.tokenAddress.toLowerCase()
-      : (tx.symbol || 'unknown-token').toLowerCase();
-    const decimals = tx.decimals !== null && tx.decimals !== undefined ? tx.decimals : 18;
+      ? `${data.chain}:${tx.tokenAddress.toLowerCase()}`
+      : `${data.chain}:unknown:${(tx.symbol || 'token').toLowerCase()}`;
+    const hasKnownDecimals = tx.decimals !== null && tx.decimals !== undefined;
+    const decimals = hasKnownDecimals ? (tx.decimals as number) : null;
     const rawAmount = BigInt(tx.rawAmount || '0');
     const existing = assetMap.get(key);
+
+    const tokenSymbol =
+      tx.symbol ||
+      (tx.tokenAddress ? truncateHashOrAddress(tx.tokenAddress, 6, 4) : 'Token');
+    const tokenName =
+      tx.name ||
+      tx.symbol ||
+      (tx.tokenAddress ? `Token ${truncateHashOrAddress(tx.tokenAddress, 6, 4)}` : 'ERC-20 Token');
 
     if (existing) {
       existing.count += 1;
       existing.totalRaw += rawAmount;
-      existing.exactVolume = formatUnitsToExactDecimal(existing.totalRaw, existing.decimals);
-      existing.displayVolume = formatReadableAmount(existing.exactVolume).display;
+      if (existing.hasKnownDecimals && existing.decimals !== null) {
+        existing.exactVolume = formatUnitsToExactDecimal(existing.totalRaw, existing.decimals);
+        existing.displayVolume = formatReadableAmount(existing.exactVolume).display;
+      } else {
+        existing.exactVolume = existing.totalRaw.toString();
+        existing.displayVolume = 'Raw amount (decimals unavailable)';
+      }
     } else {
-      const exactVolume = formatUnitsToExactDecimal(rawAmount, decimals);
-      const displayVolume = formatReadableAmount(exactVolume).display;
+      let exactVolume: string;
+      let displayVolume: string;
+
+      if (hasKnownDecimals && decimals !== null) {
+        exactVolume = formatUnitsToExactDecimal(rawAmount, decimals);
+        displayVolume = formatReadableAmount(exactVolume).display;
+      } else {
+        exactVolume = rawAmount.toString();
+        displayVolume = 'Raw amount (decimals unavailable)';
+      }
+
       assetMap.set(key, {
         id: key,
         tokenAddress: tx.tokenAddress || null,
-        symbol: tx.symbol || 'Token',
-        name: tx.name || tx.symbol || 'ERC-20 Token',
+        symbol: tokenSymbol,
+        name: tokenName,
         count: 1,
         totalRaw: rawAmount,
         decimals,
+        hasKnownDecimals,
         exactVolume,
         displayVolume,
         isNative: false,
@@ -163,7 +188,9 @@ export function MovingAssetsSummary({ data }: MovingAssetsSummaryProps) {
                       Total amount across transfers:
                     </span>
                     <span className="font-mono font-semibold text-zinc-100 truncate" title={asset.exactVolume}>
-                      {asset.displayVolume} {asset.symbol}
+                      {asset.hasKnownDecimals
+                        ? `${asset.displayVolume} ${asset.symbol}`
+                        : `${asset.exactVolume} (Raw amount, decimals unavailable)`}
                     </span>
                     <CopyButton text={asset.exactVolume} label={`total ${asset.symbol} amount`} iconOnly className="shrink-0" />
                   </div>

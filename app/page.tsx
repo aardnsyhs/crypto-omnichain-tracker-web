@@ -6,6 +6,7 @@ import { ApiClientError } from '../lib/api-errors';
 import { createApiClient } from '../lib/api-client';
 import { isValidChain, isValidTransactionHash } from '../lib/validation';
 import { TransactionSearchForm } from '../components/TransactionSearchForm';
+import { MarketNetworkOverview } from '../components/MarketNetworkOverview';
 import { TransactionResultCard } from '../components/TransactionResultCard';
 import { LoadingState } from '../components/LoadingState';
 import { LookupErrorState } from '../components/LookupErrorState';
@@ -126,10 +127,26 @@ export default function HomePage() {
             initialHash={transactionHash}
             isLoading={isLoading}
             isCondensed={isFormCondensed && Boolean(result) && !isLoading}
-            onToggleCondensed={setIsFormCondensed}
+            onToggleCondensed={(condensed) => {
+              setIsFormCondensed(condensed);
+              if (!condensed) {
+                setResult(null);
+                setTransactionHash('');
+                if (typeof window !== 'undefined') {
+                  const url = new URL(window.location.href);
+                  url.searchParams.delete('chain');
+                  url.searchParams.delete('tx');
+                  url.searchParams.delete('hash');
+                  window.history.replaceState({}, '', url.pathname);
+                }
+              }
+            }}
             onSubmit={(chain, hash) => void executeLookup(chain, hash)}
           />
         </section>
+
+        {/* Market & Network Overview */}
+        <MarketNetworkOverview apiClient={apiClient} isVisible={!result} />
 
         {/* Interactive Lookup State: Loading / Result / Error */}
         <section aria-label="Lookup Results">
