@@ -62,12 +62,17 @@ export class ApiClient {
 
     let response: Response;
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      };
+      if (request.refresh) {
+        headers['x-refresh'] = 'true';
+      }
+
       response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
+        headers,
         credentials: 'include',
         body: JSON.stringify(request),
       });

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Share2, Check, Info } from 'lucide-react';
+import { Share2, Check, Info, RefreshCw, Loader2 } from 'lucide-react';
 import type { TransactionData } from '../lib/api-types';
 import {
   copyToClipboard,
@@ -18,9 +18,16 @@ import { cn } from '../lib/utils';
 interface TransactionSummaryProps {
   data: TransactionData;
   onShare?: () => void;
+  onRetry?: () => void;
+  isRetrying?: boolean;
 }
 
-export function TransactionSummary({ data }: TransactionSummaryProps) {
+export function TransactionSummary({
+  data,
+  onShare,
+  onRetry,
+  isRetrying,
+}: TransactionSummaryProps) {
   const [copiedShare, setCopiedShare] = useState(false);
 
   const handleShare = async () => {
@@ -29,6 +36,7 @@ export function TransactionSummary({ data }: TransactionSummaryProps) {
       const ok = await copyToClipboard(shareUrl);
       if (ok) {
         setCopiedShare(true);
+        onShare?.();
         setTimeout(() => setCopiedShare(false), 2000);
       }
     }
@@ -181,6 +189,25 @@ export function TransactionSummary({ data }: TransactionSummaryProps) {
               : isRevocation
                 ? 'Allowance Revoked (0)'
                 : `${formattedAmt.display} ${a.symbol || ''} Authorized`}
+          </h2>
+        </div>
+      );
+    }
+
+    const isReceiptUnavailable = data.coverageReasons?.includes('receipt_unavailable');
+
+    if (isReceiptUnavailable && totalTransfers === 1) {
+      const valFormatted = formatReadableAmount(
+        hasNativeValue ? data.value?.formatted : tokenTransfers[0]?.formattedAmount,
+      );
+      const symbol = hasNativeValue ? data.value?.symbol : tokenTransfers[0]?.symbol || 'Token';
+      return (
+        <div>
+          <div className="font-mono text-xs text-amber-400 uppercase tracking-wider font-semibold mb-1">
+            1 Detected Transfer
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground font-mono">
+            {valFormatted.display} {symbol}
           </h2>
         </div>
       );
@@ -352,13 +379,73 @@ export function TransactionSummary({ data }: TransactionSummaryProps) {
 
       {/* 5. Limitation Notice */}
       {data.coverage === 'partial' && (
-        <Alert variant="warning" className="mt-4">
-          <Info className="h-4 w-4" aria-hidden="true" />
-          <AlertTitle>Partial Decoder Coverage</AlertTitle>
-          <AlertDescription>
-            Some internal contract actions or custom events require archive trace data and are not
-            decoded by standard EVM schemas.
-          </AlertDescription>
+        <Alert
+          variant="warning"
+          className={cn(
+            'mt-4',
+            data.coverageReasons?.includes('receipt_unavailable') &&
+              'border-amber-500/40 bg-amber-950/30 text-amber-200',
+          )}
+        >
+          <Info
+            className={cn(
+              'h-4 w-4 shrink-0',
+              data.coverageReasons?.includes('receipt_unavailable')
+                ? 'text-amber-400'
+                : 'text-amber-500',
+            )}
+            aria-hidden="true"
+          />
+          <div className="flex-1 min-w-0">
+            <AlertTitle
+              className={cn(
+                'font-semibold',
+                data.coverageReasons?.includes('receipt_unavailable')
+                  ? 'text-amber-300'
+                  : 'text-foreground',
+              )}
+            >
+              {data.coverageReasons?.includes('receipt_unavailable')
+                ? 'Transaction Data Incomplete'
+                : 'Partial Decoder Coverage'}
+            </AlertTitle>
+            <AlertDescription
+              className={cn(
+                'text-xs sm:text-sm mt-1',
+                data.coverageReasons?.includes('receipt_unavailable')
+                  ? 'text-amber-200/90'
+                  : 'text-muted-foreground',
+              )}
+            >
+              {data.coverageReasons?.includes('receipt_unavailable')
+                ? 'Transaction data is incomplete. Token transfers and approvals may be missing because the receipt could not be retrieved.'
+                : 'Some internal contract actions or custom events require archive trace data and are not decoded by standard EVM schemas.'}
+            </AlertDescription>
+            {data.coverageReasons?.includes('receipt_unavailable') && onRetry && (
+              <div className="mt-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onRetry}
+                  disabled={isRetrying}
+                  className="gap-1.5 text-xs h-8 border-amber-500/40 hover:bg-amber-500/20 text-amber-200 font-sans cursor-pointer disabled:opacity-50"
+                >
+                  {isRetrying ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-400" />
+                      <span>Retrying receipt...</span>
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5 text-amber-400" />
+                      <span>Retry missing data</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
         </Alert>
       )}
     </div>

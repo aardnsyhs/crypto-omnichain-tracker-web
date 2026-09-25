@@ -42,16 +42,22 @@ export default function HomePage() {
   }, [apiClient]);
 
   // Execute lookup with race-condition handling
+  const [isRetrying, setIsRetrying] = useState<boolean>(false);
+
   const executeLookup = useCallback(
-    async (chain: SupportedChain, hash: string) => {
+    async (chain: SupportedChain, hash: string, isRefresh = false) => {
       const searchId = ++latestSearchIdRef.current;
 
       setSelectedChain(chain);
       setTransactionHash(hash);
-      setIsLoading(true);
-      setError(null);
-      setResult(null);
-      setIsFormCondensed(false);
+      if (isRefresh) {
+        setIsRetrying(true);
+      } else {
+        setIsLoading(true);
+        setError(null);
+        setResult(null);
+        setIsFormCondensed(false);
+      }
 
       // Sync URL search params
       if (typeof window !== 'undefined') {
@@ -65,6 +71,7 @@ export default function HomePage() {
         const response = await apiClient.lookupTransaction({
           chain,
           transactionHash: hash,
+          refresh: isRefresh,
         });
 
         // Discard result if a newer search was initiated
@@ -74,6 +81,7 @@ export default function HomePage() {
 
         setResult(response);
         setIsFormCondensed(true);
+        setError(null);
       } catch (err) {
         if (searchId !== latestSearchIdRef.current) {
           return;
@@ -82,6 +90,7 @@ export default function HomePage() {
       } finally {
         if (searchId === latestSearchIdRef.current) {
           setIsLoading(false);
+          setIsRetrying(false);
         }
         // Refresh session history to reflect current lookup
         void fetchHistory();
@@ -89,6 +98,12 @@ export default function HomePage() {
     },
     [apiClient, fetchHistory],
   );
+
+  const handleRetryMissingData = useCallback(() => {
+    if (selectedChain && transactionHash && !isRetrying) {
+      void executeLookup(selectedChain, transactionHash, true);
+    }
+  }, [selectedChain, transactionHash, isRetrying, executeLookup]);
 
   // Initial mount: load history and check URL params for deep-linked lookups
   useEffect(() => {
@@ -224,7 +239,13 @@ export default function HomePage() {
             />
           )}
 
-          {!isLoading && result && <TransactionResultCard response={result} />}
+          {!isLoading && result && (
+            <TransactionResultCard
+              response={result}
+              onRetry={handleRetryMissingData}
+              isRetrying={isRetrying}
+            />
+          )}
         </section>
 
         {/* Search History */}

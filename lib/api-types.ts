@@ -98,6 +98,7 @@ export interface LookupMetadata {
 export interface TransactionLookupRequest {
   chain: SupportedChain;
   transactionHash: string;
+  refresh?: boolean;
 }
 
 export interface TransactionLookupResponse {
@@ -153,6 +154,7 @@ export interface CoinMarketData {
   updatedAt: string | null;
   isStale: boolean;
   status: MarketDataStatus;
+  reason?: string | null;
 }
 
 export interface ChainNetworkData {
@@ -165,13 +167,15 @@ export interface ChainNetworkData {
   updatedAt: string | null;
   isStale: boolean;
   status: NetworkDataStatus;
+  reason?: string | null;
+  gasNote?: string | null;
 }
 
 export interface NetworkOverviewItem {
   chain: SupportedChain;
   name: string;
   nativeSymbol: string;
-  coinGeckoId: string;
+  coinGeckoId?: string;
   market: CoinMarketData | null;
   network: ChainNetworkData | null;
 }

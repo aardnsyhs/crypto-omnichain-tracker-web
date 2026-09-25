@@ -75,30 +75,39 @@ export function formatChange24h(change: number | null): {
   return { text: '0.00%', colorClass: 'text-muted-foreground' };
 }
 
-export function formatGasGwei(gweiStr: string | null): {
+export function formatGasGwei(
+  gweiStr: string | null,
+  gasNote?: string | null,
+): {
   display: string;
   exact: string | null;
+  note: string | null;
 } {
   if (!gweiStr || gweiStr === 'null') {
-    return { display: 'Unavailable', exact: null };
+    return { display: 'Unavailable', exact: null, note: null };
   }
 
   const num = Number.parseFloat(gweiStr);
   if (!Number.isFinite(num)) {
-    return { display: 'Unavailable', exact: null };
+    return { display: 'Unavailable', exact: null, note: null };
   }
 
   if (num === 0) {
-    return { display: '0 Gwei', exact: '0 Gwei' };
+    return {
+      display: '0 Gwei (est.)',
+      exact: '0 Gwei',
+      note: gasNote || 'Provider estimated 0 Gwei under low congestion',
+    };
   }
 
   if (num > 0 && num < 0.01) {
-    return { display: '< 0.01 Gwei', exact: `${gweiStr} Gwei` };
+    return { display: '< 0.01 Gwei', exact: `${gweiStr} Gwei`, note: null };
   }
 
   return {
     display: `${num.toFixed(2)} Gwei`,
     exact: `${gweiStr} Gwei`,
+    note: null,
   };
 }
 
@@ -216,7 +225,7 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
                 </CardTitle>
                 <CardDescription className="text-xs text-muted-foreground mt-0.5">
                   Live native coin quotes, 24h momentum, latest block heights, and network gas
-                  estimates.
+                  estimates from official Blockchair stats API.
                 </CardDescription>
               </div>
             </div>
@@ -317,12 +326,19 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
                   <TableBody>
                     {data.map((item) => {
                       const change = formatChange24h(item.market?.change24h ?? null);
-                      const gas = formatGasGwei(item.network?.suggestedGasPriceGwei ?? null);
+                      const gas = formatGasGwei(
+                        item.network?.suggestedGasPriceGwei ?? null,
+                        item.network?.gasNote ?? null,
+                      );
                       const isPositive = (item.market?.change24h ?? 0) > 0;
                       const isNegative = (item.market?.change24h ?? 0) < 0;
                       const tickerClass =
                         NETWORK_TICKER_CLASSES[item.chain] ||
                         'border-border/60 bg-secondary text-secondary-foreground';
+                      const unindexedReason =
+                        item.network?.reason ||
+                        item.market?.reason ||
+                        'Not indexed in Blockchair stats API catalog';
 
                       return (
                         <TableRow
@@ -345,53 +361,134 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
                               </span>
                             </div>
                             <div className="text-[10px] text-muted-foreground mt-0.5">
-                              {item.market?.source || 'Unavailable'} /{' '}
-                              {item.network?.source || 'Unavailable'}
+                              {item.market?.status === 'available' ||
+                              item.network?.status === 'available'
+                                ? 'Blockchair (stats)'
+                                : 'Blockchair (unindexed)'}
                             </div>
                           </TableCell>
 
                           {/* Native Coin Price */}
                           <TableCell className="py-2.5 px-3 text-right font-mono tabular-nums text-foreground font-semibold text-sm">
-                            {formatUsdPrice(item.market?.priceUsd ?? null)}
+                            {item.market?.priceUsd !== null &&
+                            item.market?.priceUsd !== undefined ? (
+                              formatUsdPrice(item.market.priceUsd)
+                            ) : (
+                              <Tooltip>
+                                <TooltipTrigger
+                                  render={
+                                    <span className="text-muted-foreground font-normal text-xs cursor-help">
+                                      Unavailable
+                                    </span>
+                                  }
+                                />
+                                <TooltipContent>{unindexedReason}</TooltipContent>
+                              </Tooltip>
+                            )}
                           </TableCell>
 
                           {/* 24h Change */}
                           <TableCell className="py-2.5 px-3 text-right">
-                            <div
-                              className={cn(
-                                'inline-flex items-center justify-end gap-1 font-mono text-xs tabular-nums font-semibold',
-                                change.colorClass,
-                              )}
-                            >
-                              {isPositive && (
-                                <TrendingUp className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                              )}
-                              {isNegative && (
-                                <TrendingDown className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                              )}
-                              <span>{change.text}</span>
-                            </div>
+                            {item.market?.change24h !== null &&
+                            item.market?.change24h !== undefined ? (
+                              <div
+                                className={cn(
+                                  'inline-flex items-center justify-end gap-1 font-mono text-xs tabular-nums font-semibold',
+                                  change.colorClass,
+                                )}
+                              >
+                                {isPositive && (
+                                  <TrendingUp className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                                )}
+                                {isNegative && (
+                                  <TrendingDown
+                                    className="h-3.5 w-3.5 shrink-0"
+                                    aria-hidden="true"
+                                  />
+                                )}
+                                <span>{change.text}</span>
+                              </div>
+                            ) : (
+                              <Tooltip>
+                                <TooltipTrigger
+                                  render={
+                                    <span className="text-muted-foreground font-normal text-xs cursor-help">
+                                      Unavailable
+                                    </span>
+                                  }
+                                />
+                                <TooltipContent>{unindexedReason}</TooltipContent>
+                              </Tooltip>
+                            )}
                           </TableCell>
 
                           {/* Latest Block */}
                           <TableCell className="py-2.5 px-3 text-right font-mono tabular-nums text-foreground/90 text-xs">
                             {item.network?.latestBlockNumber !== null &&
-                            item.network?.latestBlockNumber !== undefined
-                              ? `#${item.network.latestBlockNumber.toLocaleString('en-US')}`
-                              : 'Unavailable'}
+                            item.network?.latestBlockNumber !== undefined ? (
+                              `#${item.network.latestBlockNumber.toLocaleString('en-US')}`
+                            ) : (
+                              <Tooltip>
+                                <TooltipTrigger
+                                  render={
+                                    <span className="text-muted-foreground font-normal text-xs cursor-help">
+                                      Unavailable
+                                    </span>
+                                  }
+                                />
+                                <TooltipContent>{unindexedReason}</TooltipContent>
+                              </Tooltip>
+                            )}
                           </TableCell>
 
                           {/* Block Time */}
                           <TableCell className="py-2.5 px-3 text-right font-mono tabular-nums text-muted-foreground text-xs">
-                            {formatRelativeTime(item.network?.latestBlockTimestamp ?? null)}
+                            {item.network?.latestBlockTimestamp !== null &&
+                            item.network?.latestBlockTimestamp !== undefined ? (
+                              formatRelativeTime(item.network.latestBlockTimestamp)
+                            ) : (
+                              <Tooltip>
+                                <TooltipTrigger
+                                  render={
+                                    <span className="text-muted-foreground font-normal text-xs cursor-help">
+                                      Unavailable
+                                    </span>
+                                  }
+                                />
+                                <TooltipContent>{unindexedReason}</TooltipContent>
+                              </Tooltip>
+                            )}
                           </TableCell>
 
                           {/* Suggested Gas Price */}
-                          <TableCell
-                            className="py-2.5 px-3 text-right font-mono tabular-nums text-foreground/90 text-xs"
-                            title={gas.exact ? `Exact: ${gas.exact}` : undefined}
-                          >
-                            {gas.display}
+                          <TableCell className="py-2.5 px-3 text-right font-mono tabular-nums text-foreground/90 text-xs">
+                            {gas.display === 'Unavailable' ? (
+                              <Tooltip>
+                                <TooltipTrigger
+                                  render={
+                                    <span className="text-muted-foreground font-normal text-xs cursor-help">
+                                      Unavailable
+                                    </span>
+                                  }
+                                />
+                                <TooltipContent>{unindexedReason}</TooltipContent>
+                              </Tooltip>
+                            ) : gas.note ? (
+                              <Tooltip>
+                                <TooltipTrigger
+                                  render={
+                                    <span className="text-foreground/90 cursor-help underline decoration-dotted underline-offset-2">
+                                      {gas.display}
+                                    </span>
+                                  }
+                                />
+                                <TooltipContent>{gas.note}</TooltipContent>
+                              </Tooltip>
+                            ) : (
+                              <span title={gas.exact ? `Exact: ${gas.exact}` : undefined}>
+                                {gas.display}
+                              </span>
+                            )}
                           </TableCell>
 
                           {/* Status */}
@@ -413,9 +510,19 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
                                 </Badge>
                               )}
                               {item.network?.status === 'unavailable' && (
-                                <Badge variant="secondary" className="text-[10px]">
-                                  Unavailable
-                                </Badge>
+                                <Tooltip>
+                                  <TooltipTrigger
+                                    render={
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-[10px] cursor-help"
+                                      >
+                                        Unavailable
+                                      </Badge>
+                                    }
+                                  />
+                                  <TooltipContent>{unindexedReason}</TooltipContent>
+                                </Tooltip>
                               )}
                               {!item.market?.isStale &&
                                 !item.network?.isStale &&
@@ -442,12 +549,19 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
               <div className="space-y-2.5 md:hidden">
                 {data.map((item) => {
                   const change = formatChange24h(item.market?.change24h ?? null);
-                  const gas = formatGasGwei(item.network?.suggestedGasPriceGwei ?? null);
+                  const gas = formatGasGwei(
+                    item.network?.suggestedGasPriceGwei ?? null,
+                    item.network?.gasNote ?? null,
+                  );
                   const isPositive = (item.market?.change24h ?? 0) > 0;
                   const isNegative = (item.market?.change24h ?? 0) < 0;
                   const tickerClass =
                     NETWORK_TICKER_CLASSES[item.chain] ||
                     'border-border/60 bg-secondary text-secondary-foreground';
+                  const unindexedReason =
+                    item.network?.reason ||
+                    item.market?.reason ||
+                    'Not indexed in Blockchair stats API catalog';
 
                   return (
                     <div
@@ -474,6 +588,18 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
                               Stale
                             </Badge>
                           )}
+                          {item.network?.status === 'unavailable' && (
+                            <Tooltip>
+                              <TooltipTrigger
+                                render={
+                                  <Badge variant="secondary" className="text-[10px] cursor-help">
+                                    Unavailable
+                                  </Badge>
+                                }
+                              />
+                              <TooltipContent>{unindexedReason}</TooltipContent>
+                            </Tooltip>
+                          )}
                           {!item.market?.isStale &&
                             !item.network?.isStale &&
                             item.market?.status === 'available' &&
@@ -494,7 +620,21 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
                             <span>Native Price</span>
                           </span>
                           <div className="font-mono text-sm font-semibold text-foreground tabular-nums mt-0.5">
-                            {formatUsdPrice(item.market?.priceUsd ?? null)}
+                            {item.market?.priceUsd !== null &&
+                            item.market?.priceUsd !== undefined ? (
+                              formatUsdPrice(item.market.priceUsd)
+                            ) : (
+                              <Tooltip>
+                                <TooltipTrigger
+                                  render={
+                                    <span className="text-muted-foreground font-normal text-xs cursor-help">
+                                      Unavailable
+                                    </span>
+                                  }
+                                />
+                                <TooltipContent>{unindexedReason}</TooltipContent>
+                              </Tooltip>
+                            )}
                           </div>
                         </div>
 
@@ -506,13 +646,29 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
                               change.colorClass,
                             )}
                           >
-                            {isPositive && (
-                              <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
+                            {item.market?.change24h !== null &&
+                            item.market?.change24h !== undefined ? (
+                              <>
+                                {isPositive && (
+                                  <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
+                                )}
+                                {isNegative && (
+                                  <TrendingDown className="h-3.5 w-3.5" aria-hidden="true" />
+                                )}
+                                <span>{change.text}</span>
+                              </>
+                            ) : (
+                              <Tooltip>
+                                <TooltipTrigger
+                                  render={
+                                    <span className="text-muted-foreground font-normal text-xs cursor-help">
+                                      Unavailable
+                                    </span>
+                                  }
+                                />
+                                <TooltipContent>{unindexedReason}</TooltipContent>
+                              </Tooltip>
                             )}
-                            {isNegative && (
-                              <TrendingDown className="h-3.5 w-3.5" aria-hidden="true" />
-                            )}
-                            <span>{change.text}</span>
                           </div>
                         </div>
 
@@ -523,12 +679,28 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
                           </span>
                           <div className="font-mono text-xs text-foreground/90 tabular-nums mt-0.5">
                             {item.network?.latestBlockNumber !== null &&
-                            item.network?.latestBlockNumber !== undefined
-                              ? `#${item.network.latestBlockNumber.toLocaleString('en-US')}`
-                              : 'Unavailable'}
+                            item.network?.latestBlockNumber !== undefined ? (
+                              `#${item.network.latestBlockNumber.toLocaleString('en-US')}`
+                            ) : (
+                              <Tooltip>
+                                <TooltipTrigger
+                                  render={
+                                    <span className="text-muted-foreground font-normal text-xs cursor-help">
+                                      Unavailable
+                                    </span>
+                                  }
+                                />
+                                <TooltipContent>{unindexedReason}</TooltipContent>
+                              </Tooltip>
+                            )}
                           </div>
                           <div className="text-[10px] text-muted-foreground font-mono mt-0.5">
-                            {formatRelativeTime(item.network?.latestBlockTimestamp ?? null)}
+                            {item.network?.latestBlockTimestamp !== null &&
+                            item.network?.latestBlockTimestamp !== undefined ? (
+                              formatRelativeTime(item.network.latestBlockTimestamp)
+                            ) : (
+                              <span className="text-muted-foreground">Unavailable</span>
+                            )}
                           </div>
                         </div>
 
@@ -538,7 +710,31 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
                             <span>Suggested Gas</span>
                           </span>
                           <div className="font-mono text-xs text-foreground/90 tabular-nums mt-0.5">
-                            {gas.display}
+                            {gas.display === 'Unavailable' ? (
+                              <Tooltip>
+                                <TooltipTrigger
+                                  render={
+                                    <span className="text-muted-foreground font-normal text-xs cursor-help">
+                                      Unavailable
+                                    </span>
+                                  }
+                                />
+                                <TooltipContent>{unindexedReason}</TooltipContent>
+                              </Tooltip>
+                            ) : gas.note ? (
+                              <Tooltip>
+                                <TooltipTrigger
+                                  render={
+                                    <span className="text-foreground/90 cursor-help underline decoration-dotted underline-offset-2">
+                                      {gas.display}
+                                    </span>
+                                  }
+                                />
+                                <TooltipContent>{gas.note}</TooltipContent>
+                              </Tooltip>
+                            ) : (
+                              gas.display
+                            )}
                           </div>
                           {gas.exact && gas.exact !== gas.display && (
                             <div className="text-[10px] text-muted-foreground font-mono truncate max-w-[120px] mt-0.5">
@@ -551,12 +747,11 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
                       {/* Source Footnote */}
                       <div className="mt-2.5 border-t border-border/40 pt-1.5 text-[10px] text-muted-foreground flex flex-col gap-0.5">
                         <div>
-                          Market: {item.market?.source || 'Unavailable'}
-                          {item.market?.updatedAt &&
-                            ` (${formatSourceTimestamp(item.market.updatedAt)})`}
-                        </div>
-                        <div>
-                          Node: {item.network?.source || 'Unavailable'}
+                          Source:{' '}
+                          {item.market?.status === 'available' ||
+                          item.network?.status === 'available'
+                            ? 'Blockchair (stats)'
+                            : 'Blockchair (unindexed in stats catalog)'}
                           {item.network?.updatedAt &&
                             ` (${formatSourceTimestamp(item.network.updatedAt)})`}
                         </div>
@@ -569,8 +764,8 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
               {/* Explanatory Note & Source Attribution */}
               <div className="mt-3 border-t border-border/60 pt-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-[11px] text-muted-foreground">
                 <div>
-                  Sources: Blockchair (Ethereum stats), CoinGecko (market quotes), EVM RPC (network
-                  blocks and gas).
+                  Source: Official Blockchair API (Ethereum stats; BSC & Polygon PoS are unindexed
+                  in Blockchair stats API catalog).
                 </div>
                 <div className="text-muted-foreground/80">
                   Gas estimates are advisory; actual network execution costs vary by gas limit and

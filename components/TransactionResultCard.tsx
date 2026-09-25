@@ -9,9 +9,15 @@ import { TechnicalDetails } from './TechnicalDetails';
 
 interface TransactionResultCardProps {
   response: TransactionLookupResponse;
+  onRetry?: () => void;
+  isRetrying?: boolean;
 }
 
-export function TransactionResultCard({ response }: TransactionResultCardProps) {
+export function TransactionResultCard({
+  response,
+  onRetry,
+  isRetrying,
+}: TransactionResultCardProps) {
   const { data, meta } = response;
 
   const isFailed = data.status === 'failed';
@@ -27,7 +33,7 @@ export function TransactionResultCard({ response }: TransactionResultCardProps) 
   return (
     <article className="w-full overflow-hidden rounded-xl border border-border/80 bg-card text-card-foreground shadow-2xl backdrop-blur-sm divide-y divide-border/60">
       {/* Tier 1: Primary Action & Executive Summary */}
-      <TransactionSummary data={data} />
+      <TransactionSummary data={data} onRetry={onRetry} isRetrying={isRetrying} />
 
       {/* Tier 2: Moving Assets Summary (Neutral token overview for multi-transfers) */}
       {!isFailed && hasTransfers && <MovingAssetsSummary data={data} />}
