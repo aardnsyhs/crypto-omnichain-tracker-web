@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import type { TransactionLookupResponse } from '../lib/api-types';
 import { TransactionSummary } from './TransactionSummary';
 import { MovingAssetsSummary } from './MovingAssetsSummary';
@@ -26,7 +25,7 @@ export function TransactionResultCard({ response }: TransactionResultCardProps) 
   const isPureApproval = !hasTransfers && approvals.length === 1;
 
   return (
-    <article className="w-full overflow-hidden rounded-xl border border-zinc-800/80 bg-zinc-950 text-zinc-100 shadow-2xl divide-y divide-zinc-800/60">
+    <article className="w-full overflow-hidden rounded-xl border border-zinc-800/90 bg-zinc-950/90 text-zinc-100 shadow-2xl backdrop-blur-sm divide-y divide-zinc-850/60">
       {/* Tier 1: Primary Action & Executive Summary */}
       <TransactionSummary data={data} />
 

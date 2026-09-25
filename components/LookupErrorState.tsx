@@ -1,7 +1,21 @@
 'use client';
 
 import React from 'react';
+import {
+  AlertTriangle,
+  SearchX,
+  XCircle,
+  Globe,
+  Clock,
+  ShieldAlert,
+  Radio,
+  WifiOff,
+  RotateCcw,
+} from 'lucide-react';
 import { ApiClientError } from '../lib/api-errors';
+import { Card, CardContent } from './ui/card';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
 
 interface LookupErrorStateProps {
   error: ApiClientError | Error | null;
@@ -15,8 +29,9 @@ export function LookupErrorState({ error, onRetry }: LookupErrorStateProps) {
   let description =
     error.message || 'An unexpected error occurred while looking up this transaction.';
   let badgeText = 'Error';
-  let badgeColor = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-  let icon = '⚠️';
+  let badgeVariant: 'default' | 'secondary' | 'outline' | 'success' | 'warning' | 'destructive' | 'accent' =
+    'destructive';
+  let IconComponent = AlertTriangle;
   let hint: string | null = null;
   let requestId = '';
 
@@ -29,8 +44,8 @@ export function LookupErrorState({ error, onRetry }: LookupErrorStateProps) {
         description =
           'The specified transaction hash was not found on the selected network. It may not exist, might have been dropped from the mempool, or could belong to a different blockchain.';
         badgeText = 'HTTP 404';
-        badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-        icon = '🔍';
+        badgeVariant = 'warning';
+        IconComponent = SearchX;
         hint = 'Tip: Confirm you selected the correct network (Ethereum, BSC, or Polygon).';
         break;
 
@@ -39,7 +54,8 @@ export function LookupErrorState({ error, onRetry }: LookupErrorStateProps) {
         description =
           'The provided transaction hash is malformed. EVM transaction hashes must start with "0x" followed by exactly 64 hexadecimal characters.';
         badgeText = 'HTTP 400';
-        icon = '❌';
+        badgeVariant = 'destructive';
+        IconComponent = XCircle;
         break;
 
       case 'UNSUPPORTED_CHAIN':
@@ -47,7 +63,8 @@ export function LookupErrorState({ error, onRetry }: LookupErrorStateProps) {
         description =
           'The selected chain is not supported. Please choose Ethereum, BNB Smart Chain, or Polygon.';
         badgeText = 'HTTP 400';
-        icon = '🌐';
+        badgeVariant = 'secondary';
+        IconComponent = Globe;
         break;
 
       case 'RATE_LIMIT_EXCEEDED':
@@ -55,8 +72,8 @@ export function LookupErrorState({ error, onRetry }: LookupErrorStateProps) {
         description =
           'You have exceeded the public rate limit of 30 lookups per minute. Please pause for a few seconds before trying again.';
         badgeText = 'HTTP 429';
-        badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-        icon = '⏳';
+        badgeVariant = 'warning';
+        IconComponent = Clock;
         hint = 'The rate limit resets every 60 seconds.';
         break;
 
@@ -65,8 +82,8 @@ export function LookupErrorState({ error, onRetry }: LookupErrorStateProps) {
         description =
           'The upstream blockchain provider quota is temporarily exhausted. The service will recover shortly.';
         badgeText = 'HTTP 503';
-        badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-        icon = '🛑';
+        badgeVariant = 'warning';
+        IconComponent = ShieldAlert;
         hint = 'Please wait a moment and try your lookup again.';
         break;
 
@@ -76,7 +93,8 @@ export function LookupErrorState({ error, onRetry }: LookupErrorStateProps) {
         description =
           'The blockchain data provider did not respond within the allocated timeout or experienced an internal issue.';
         badgeText = 'HTTP 502';
-        icon = '📡';
+        badgeVariant = 'destructive';
+        IconComponent = Radio;
         break;
 
       case 'NETWORK_ERROR':
@@ -84,64 +102,63 @@ export function LookupErrorState({ error, onRetry }: LookupErrorStateProps) {
         description =
           'Could not establish a connection to the tracker API service. Please verify that the API server is online.';
         badgeText = 'Offline';
-        icon = '🔌';
+        badgeVariant = 'destructive';
+        IconComponent = WifiOff;
         break;
 
       default:
         badgeText = error.statusCode ? `HTTP ${error.statusCode}` : 'Error';
+        badgeVariant = 'destructive';
+        IconComponent = AlertTriangle;
     }
   }
 
   return (
-    <div
-      role="alert"
-      className="w-full rounded-xl border border-zinc-800/80 bg-zinc-900/60 p-5 shadow-xl backdrop-blur-sm"
-    >
-      <div className="flex items-start gap-3.5">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950 font-mono text-sm text-zinc-300">
-          {icon}
-        </span>
-        <div className="flex-1">
-          <div className="mb-1 flex flex-wrap items-center gap-2">
-            <h3 className="text-sm font-semibold text-zinc-100">{title}</h3>
-            <span
-              className={`inline-flex items-center rounded border px-2 py-0.5 font-mono text-[10px] font-medium ${badgeColor}`}
-            >
-              {badgeText}
-            </span>
+    <Card role="alert" className="border-rose-900/40 bg-zinc-950/80">
+      <CardContent className="p-5 sm:p-6">
+        <div className="flex items-start gap-4">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/90 text-rose-400 shadow-inner">
+            <IconComponent className="h-5 w-5" aria-hidden="true" />
           </div>
-
-          <p className="text-xs text-zinc-400 leading-relaxed">{description}</p>
-
-          {hint && <p className="mt-2 font-mono text-xs text-zinc-400">{hint}</p>}
-
-          {requestId && (
-            <p className="mt-3 font-mono text-[11px] text-zinc-500">
-              Request ID: <span className="text-zinc-400">{requestId}</span>
-            </p>
-          )}
-
-          {onRetry && (
-            <div className="mt-3">
-              <button
-                type="button"
-                onClick={onRetry}
-                className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700/80 bg-zinc-800 px-3 py-1.5 font-mono text-xs font-medium text-zinc-200 transition hover:border-zinc-600 hover:bg-zinc-700 hover:text-white"
-              >
-                <span>Retry Lookup</span>
-                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
-              </button>
+          <div className="flex-1 min-w-0">
+            <div className="mb-1 flex flex-wrap items-center gap-2">
+              <h3 className="text-sm font-semibold text-zinc-100 font-sans">{title}</h3>
+              <Badge variant={badgeVariant} className="font-mono text-[10px]">
+                {badgeText}
+              </Badge>
             </div>
-          )}
+
+            <p className="text-xs text-zinc-400 leading-relaxed font-sans">{description}</p>
+
+            {hint && (
+              <p className="mt-2 text-xs text-amber-300/90 font-sans bg-amber-500/10 border border-amber-500/20 rounded-md p-2">
+                {hint}
+              </p>
+            )}
+
+            {requestId && (
+              <p className="mt-3 font-mono text-[11px] text-zinc-500">
+                Request ID: <span className="text-zinc-400 select-all">{requestId}</span>
+              </p>
+            )}
+
+            {onRetry && (
+              <div className="mt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onRetry}
+                  className="gap-1.5"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  <span>Retry Lookup</span>
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -1,9 +1,11 @@
 'use client';
 
 import React from 'react';
+import { ShieldCheck } from 'lucide-react';
 import type { TokenApprovalItem } from '../lib/api-types';
 import { formatReadableAmount, truncateHashOrAddress } from '../lib/validation';
 import { CopyButton } from './CopyButton';
+import { Badge } from './ui/badge';
 
 interface ApprovalDetailsProps {
   approvals: TokenApprovalItem[];
@@ -25,16 +27,17 @@ export function ApprovalDetails({
     <section aria-label="Token approvals" className="p-5 sm:p-6 min-w-0">
       <div className="mb-4 flex items-center justify-between min-w-0">
         <div className="flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 text-amber-400" />
           <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 font-sans">
             {isSingle ? 'Token approval' : 'Token approvals'}
           </h3>
-          <span className="rounded border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 font-mono text-[11px] font-medium text-purple-300">
+          <Badge variant="warning" className="font-mono text-[11px]">
             {approvals.length} {isSingle ? 'approval' : 'approvals'}
-          </span>
+          </Badge>
         </div>
       </div>
 
-      <div className="divide-y divide-zinc-800/60 rounded-lg border border-zinc-800/80 bg-zinc-950/60 min-w-0 overflow-hidden">
+      <div className="divide-y divide-zinc-850/60 rounded-xl border border-zinc-800/80 bg-zinc-950/80 min-w-0 overflow-hidden shadow-sm">
         {approvals.map((item, idx) => {
           const val = formatReadableAmount(item.formattedAmount);
 
@@ -44,11 +47,11 @@ export function ApprovalDetails({
               className="p-4 sm:p-5 min-w-0 flex flex-col gap-3"
             >
               {/* Header: Token Name & Allowance Nominal */}
-              <div className="flex flex-wrap items-center justify-between gap-2 min-w-0 pb-2.5 border-b border-zinc-900">
+              <div className="flex flex-wrap items-center justify-between gap-2 min-w-0 pb-2.5 border-b border-zinc-850/60">
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="inline-flex shrink-0 items-center rounded border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 font-sans text-xs font-semibold text-purple-400">
+                  <Badge variant="warning" className="text-xs font-semibold font-sans">
                     Approval #{idx + 1}
-                  </span>
+                  </Badge>
                   <span className="font-sans text-sm font-bold text-zinc-100 truncate min-w-0">
                     {item.name ? `${item.name} (${item.symbol || '???'})` : item.symbol || 'ERC-20 Token'}
                   </span>
@@ -61,13 +64,13 @@ export function ApprovalDetails({
 
                 <div className="min-w-0 text-right ml-auto">
                   {item.isRevocation ? (
-                    <span className="inline-flex shrink-0 items-center rounded border border-rose-500/30 bg-rose-500/10 px-2.5 py-0.5 font-sans text-xs font-bold text-rose-300">
+                    <Badge variant="destructive" className="font-sans text-xs font-bold">
                       Allowance revoked (0)
-                    </span>
+                    </Badge>
                   ) : item.isUnlimited ? (
-                    <span className="inline-flex shrink-0 items-center rounded border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 font-sans text-xs font-bold text-amber-300">
-                      Maximum allowance (2²⁵⁶ − 1)
-                    </span>
+                    <Badge variant="warning" className="font-sans text-xs font-bold">
+                      Maximum allowance (2²⁵⁶ - 1)
+                    </Badge>
                   ) : (
                     <div className="flex items-center justify-end gap-1.5">
                       <span className="font-mono text-xs sm:text-sm font-bold text-zinc-100" title={val.exact}>
@@ -91,13 +94,13 @@ export function ApprovalDetails({
               {/* Explicitly Display: Approved spender and Token owner with full copy buttons */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs min-w-0">
                 {/* Approved Spender */}
-                <div className="flex flex-col gap-0.5 min-w-0">
-                  <span className="font-sans text-[11px] text-zinc-500 font-medium">
+                <div className="flex flex-col gap-1 min-w-0 rounded-lg bg-zinc-900/60 border border-zinc-800 p-2.5">
+                  <span className="font-sans text-[11px] text-zinc-400 font-medium">
                     Approved spender:
                   </span>
                   <div className="flex items-center justify-between sm:justify-start gap-1.5 min-w-0">
                     <span
-                      className="font-mono text-zinc-200 font-medium truncate min-w-0 select-all"
+                      className="font-mono text-zinc-100 font-semibold truncate min-w-0 select-all"
                       title={item.spender}
                     >
                       {truncateHashOrAddress(item.spender, 6, 4)}
@@ -107,13 +110,13 @@ export function ApprovalDetails({
                 </div>
 
                 {/* Token Owner */}
-                <div className="flex flex-col gap-0.5 min-w-0">
-                  <span className="font-sans text-[11px] text-zinc-500 font-medium">
+                <div className="flex flex-col gap-1 min-w-0 rounded-lg bg-zinc-900/60 border border-zinc-800 p-2.5">
+                  <span className="font-sans text-[11px] text-zinc-400 font-medium">
                     Token owner:
                   </span>
                   <div className="flex items-center justify-between sm:justify-start gap-1.5 min-w-0">
                     <span
-                      className="font-mono text-zinc-300 font-medium truncate min-w-0 select-all"
+                      className="font-mono text-zinc-200 font-semibold truncate min-w-0 select-all"
                       title={item.owner}
                     >
                       {truncateHashOrAddress(item.owner, 6, 4)}
@@ -124,7 +127,7 @@ export function ApprovalDetails({
               </div>
 
               {/* Token Contract Reference & Log Proof */}
-              <div className="pt-2 border-t border-zinc-900 flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-400 min-w-0">
+              <div className="pt-2 border-t border-zinc-850/60 flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-400 min-w-0">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span className="text-[11px] font-sans text-zinc-500 shrink-0">Token contract:</span>
                   <span className="font-mono text-zinc-400 text-xs truncate min-w-0 select-all" title={item.tokenAddress}>

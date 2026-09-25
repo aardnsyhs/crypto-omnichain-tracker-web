@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { Share2, Check, Info } from 'lucide-react';
 import type { TransactionData } from '../lib/api-types';
 import {
   copyToClipboard,
@@ -9,6 +10,8 @@ import {
   truncateHashOrAddress,
 } from '../lib/validation';
 import { CopyButton } from './CopyButton';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
 
 interface TransactionSummaryProps {
   data: TransactionData;
@@ -33,32 +36,32 @@ export function TransactionSummary({ data }: TransactionSummaryProps) {
     switch (data.status) {
       case 'confirmed':
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 font-sans text-xs font-medium text-emerald-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            Confirmed
-          </span>
+          <Badge variant="success" className="gap-1.5 font-sans">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
+            <span>Confirmed</span>
+          </Badge>
         );
       case 'failed':
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-2.5 py-0.5 font-sans text-xs font-medium text-rose-400">
+          <Badge variant="destructive" className="gap-1.5 font-sans">
             <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
-            Failed (Reverted)
-          </span>
+            <span>Failed (Reverted)</span>
+          </Badge>
         );
       case 'pending':
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 font-sans text-xs font-medium text-amber-400">
+          <Badge variant="warning" className="gap-1.5 font-sans">
             <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-            Pending On-Chain
-          </span>
+            <span>Pending On-Chain</span>
+          </Badge>
         );
       case 'unknown':
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700 bg-zinc-800 px-2.5 py-0.5 font-sans text-xs font-medium text-zinc-400">
+          <Badge variant="secondary" className="gap-1.5 font-sans">
             <span className="h-1.5 w-1.5 rounded-full bg-zinc-400" />
-            Unknown Status
-          </span>
+            <span>Unknown Status</span>
+          </Badge>
         );
     }
   };
@@ -149,8 +152,8 @@ export function TransactionSummary({ data }: TransactionSummaryProps) {
 
       return (
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="font-mono text-xs text-purple-400 uppercase tracking-wider font-semibold">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="font-mono text-xs text-amber-400 uppercase tracking-wider font-semibold">
               Token Approval
             </span>
             <span className="text-xs text-zinc-500">•</span>
@@ -230,9 +233,9 @@ export function TransactionSummary({ data }: TransactionSummaryProps) {
       <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-zinc-800/60 min-w-0">
         <div className="flex flex-wrap items-center gap-2 min-w-0">
           {getStatusBadge()}
-          <span className="inline-flex items-center rounded-full border border-zinc-800 bg-zinc-950 px-2.5 py-0.5 font-sans text-xs font-medium text-zinc-300">
+          <Badge variant="secondary" className="font-sans text-xs font-medium text-zinc-300">
             {getChainLabel()}
-          </span>
+          </Badge>
           <span className="text-zinc-600 hidden xs:inline">•</span>
           <span className="font-mono text-xs text-zinc-400">
             Block #{data.blockNumber}
@@ -247,21 +250,25 @@ export function TransactionSummary({ data }: TransactionSummaryProps) {
           )}
         </div>
 
-        <button
+        <Button
           type="button"
+          variant="secondary"
+          size="sm"
           onClick={handleShare}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-zinc-700/80 bg-zinc-900/80 px-2.5 py-1 font-sans text-xs font-medium text-zinc-200 transition hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+          className="gap-1.5 font-sans"
         >
-          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-            />
-          </svg>
-          <span>{copiedShare ? 'Copied!' : 'Share'}</span>
-        </button>
+          {copiedShare ? (
+            <>
+              <Check className="h-3.5 w-3.5 text-emerald-400" />
+              <span>Copied!</span>
+            </>
+          ) : (
+            <>
+              <Share2 className="h-3.5 w-3.5 text-zinc-400" />
+              <span>Share</span>
+            </>
+          )}
+        </Button>
       </div>
 
       {/* 2. Executive Impact Header (Single-Sheet typography, no nested card) */}
@@ -270,7 +277,7 @@ export function TransactionSummary({ data }: TransactionSummaryProps) {
       </div>
 
       {/* 3. Essential Forensic Metadata Row: From, To, and Network fee paid (strictly ONCE) */}
-      <div className="mt-3 flex flex-wrap items-center gap-y-2 gap-x-4 rounded-lg bg-zinc-950/70 border border-zinc-800/80 p-3 text-xs min-w-0">
+      <div className="mt-3 flex flex-wrap items-center gap-y-2 gap-x-4 rounded-lg bg-zinc-950/80 border border-zinc-800/80 p-3 text-xs min-w-0">
         {/* Initiator */}
         <div className="flex items-center gap-1.5 min-w-0">
           <span className="font-sans text-zinc-400 font-medium shrink-0">From:</span>
@@ -317,8 +324,8 @@ export function TransactionSummary({ data }: TransactionSummaryProps) {
 
       {/* 5. Critical Limitation Notice if decoder coverage is partial */}
       {data.coverage === 'partial' && (
-        <div className="mt-3 flex items-start gap-2 rounded border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs font-sans text-amber-300">
-          <span className="shrink-0">ℹ️</span>
+        <div className="mt-3 flex items-start gap-2.5 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-xs font-sans text-amber-200">
+          <Info className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
           <span>
             Note: Some internal contract actions or custom events require archive trace data and are not decoded by standard EVM schemas.
           </span>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { SupportedChain, TransactionLookupResponse, HistoryItem } from '../lib/api-types';
 import { ApiClientError } from '../lib/api-errors';
 import { createApiClient } from '../lib/api-client';
@@ -106,12 +106,22 @@ export default function HomePage() {
   }, [executeLookup, fetchHistory]);
 
   return (
-    <main className="min-h-screen bg-black px-4 py-8 text-zinc-100 sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+    <main className="relative min-h-screen bg-zinc-950 text-zinc-100 antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
+      {/* Ambient background illumination (dose capped, subtle depth) */}
+      <div
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(99,102,241,0.07),rgba(9,9,11,0))]"
+        aria-hidden="true"
+      />
+
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
         {/* Header: Quiet and hidden when active result is displayed */}
         {!result && (
-          <header className="flex flex-col items-center text-center">
-            <h1 className="text-3xl font-bold tracking-tight text-zinc-100 sm:text-4xl font-sans">
+          <header className="flex flex-col items-center text-center pt-2 sm:pt-4">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/80 px-3 py-1 text-xs text-zinc-300 shadow-sm backdrop-blur-sm">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
+              <span className="font-sans font-medium">EVM On-Chain Investigative Ledger</span>
+            </div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-zinc-100 sm:text-4xl font-sans">
               Transaction Story Explorer
             </h1>
             <p className="mt-2 max-w-lg text-sm text-zinc-400 leading-relaxed font-sans">

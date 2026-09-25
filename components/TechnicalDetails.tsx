@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { ChevronDown, ChevronRight, ExternalLink, Cpu, Terminal } from 'lucide-react';
 import type { TransactionData, LookupMetadata, CoverageReason } from '../lib/api-types';
 import { formatTimestamp } from '../lib/validation';
 import { CopyButton } from './CopyButton';
+import { Badge } from './ui/badge';
 
 interface TechnicalDetailsProps {
   data: TransactionData;
@@ -18,14 +20,14 @@ export function TechnicalDetails({ data, meta }: TechnicalDetailsProps) {
       case 'complete':
         return {
           badge: 'Decoder: Complete',
-          style: 'border-sky-500/30 bg-sky-500/10 text-sky-300',
-          dot: 'bg-sky-400',
+          variant: 'accent' as const,
+          dot: 'bg-indigo-400',
           desc: 'All on-chain actions and logs were decoded using standard EVM ERC schemas.',
         };
       case 'partial':
         return {
           badge: 'Decoder: Partial',
-          style: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
+          variant: 'warning' as const,
           dot: 'bg-amber-400',
           desc: 'Some events or internal contract calls require archive traces or custom decoders.',
         };
@@ -33,7 +35,7 @@ export function TechnicalDetails({ data, meta }: TechnicalDetailsProps) {
       default:
         return {
           badge: 'Decoder: Unsupported',
-          style: 'border-zinc-700 bg-zinc-800 text-zinc-400',
+          variant: 'secondary' as const,
           dot: 'bg-zinc-500',
           desc: 'Contract methods or event signatures are outside standard ERC decoder coverage.',
         };
@@ -59,37 +61,40 @@ export function TechnicalDetails({ data, meta }: TechnicalDetailsProps) {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between font-sans text-xs text-zinc-400 transition hover:text-zinc-200 focus:outline-none"
+        className="flex w-full items-center justify-between font-sans text-xs text-zinc-400 transition-colors hover:text-zinc-200 focus:outline-none"
       >
         <span className="flex items-center gap-2 uppercase tracking-wider font-semibold">
-          <span className="font-mono text-zinc-500">{isOpen ? '▼' : '▶'}</span>
+          {isOpen ? (
+            <ChevronDown className="h-4 w-4 text-zinc-400" aria-hidden="true" />
+          ) : (
+            <ChevronRight className="h-4 w-4 text-zinc-400" aria-hidden="true" />
+          )}
           <span>Technical details</span>
         </span>
-        <span className="text-[11px] text-zinc-500">
+        <span className="text-[11px] text-zinc-500 font-sans">
           {isOpen ? 'Hide technical details' : 'View technical details'}
         </span>
       </button>
 
       {isOpen && (
-        <div className="mt-4 space-y-4 pt-3 border-t border-zinc-800/60 text-xs">
+        <div className="mt-4 space-y-4 pt-4 border-t border-zinc-800/60 text-xs">
           {/* Decoder Coverage & Limitations Section */}
-          <div className="rounded-lg border border-zinc-800/80 bg-zinc-950/60 p-3.5 min-w-0">
+          <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/80 p-4 min-w-0 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-              <span className="text-[11px] uppercase tracking-wider text-zinc-400 font-semibold font-sans">
-                EVM Decoder Coverage
+              <span className="text-[11px] uppercase tracking-wider text-zinc-400 font-semibold font-sans flex items-center gap-1.5">
+                <Cpu className="h-3.5 w-3.5 text-zinc-400" />
+                <span>EVM Decoder Coverage</span>
               </span>
-              <span
-                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-sans text-[11px] font-medium ${coverageInfo.style}`}
-              >
+              <Badge variant={coverageInfo.variant} className="gap-1.5 font-sans text-[11px]">
                 <span className={`h-1.5 w-1.5 rounded-full ${coverageInfo.dot}`} />
-                {coverageInfo.badge}
-              </span>
+                <span>{coverageInfo.badge}</span>
+              </Badge>
             </div>
             <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">{coverageInfo.desc}</p>
 
             {data.coverageReasons && data.coverageReasons.length > 0 && (
-              <div className="mt-3 border-t border-zinc-800/60 pt-2.5">
-                <span className="text-[10px] uppercase text-zinc-500 block mb-1.5 font-sans">
+              <div className="mt-3 border-t border-zinc-850 pt-2.5">
+                <span className="text-[10px] uppercase text-zinc-500 block mb-1.5 font-sans font-medium">
                   Coverage limitations:
                 </span>
                 <ul className="space-y-1">
@@ -106,7 +111,7 @@ export function TechnicalDetails({ data, meta }: TechnicalDetailsProps) {
           </div>
 
           {/* Transaction Hash */}
-          <div className="rounded-lg border border-zinc-800/80 bg-zinc-950/60 p-3 min-w-0">
+          <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/80 p-3.5 min-w-0">
             <div className="flex items-center justify-between text-zinc-400 mb-1">
               <span className="uppercase text-[11px] font-semibold text-zinc-400 font-sans">
                 Full Transaction Hash
@@ -119,7 +124,7 @@ export function TechnicalDetails({ data, meta }: TechnicalDetailsProps) {
           {/* Technical Ledger Grid */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 min-w-0">
             {/* Native Transaction Value */}
-            <div className="rounded-lg border border-zinc-800/80 bg-zinc-950/60 p-3 min-w-0">
+            <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/80 p-3.5 min-w-0">
               <span className="text-[11px] uppercase text-zinc-400 block font-semibold font-sans">
                 Native Transaction Value
               </span>
@@ -133,7 +138,7 @@ export function TechnicalDetails({ data, meta }: TechnicalDetailsProps) {
             </div>
 
             {/* Network Fee Breakdown */}
-            <div className="rounded-lg border border-zinc-800/80 bg-zinc-950/60 p-3 min-w-0">
+            <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/80 p-3.5 min-w-0">
               <span className="text-[11px] uppercase text-zinc-400 block font-semibold font-sans">
                 Network Fee Breakdown
               </span>
@@ -148,7 +153,7 @@ export function TechnicalDetails({ data, meta }: TechnicalDetailsProps) {
             </div>
 
             {/* Block Number & Timestamp */}
-            <div className="rounded-lg border border-zinc-800/80 bg-zinc-950/60 p-3 min-w-0">
+            <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/80 p-3.5 min-w-0">
               <span className="text-[11px] uppercase text-zinc-400 block font-semibold font-sans">
                 Block Height & Timestamp
               </span>
@@ -159,20 +164,20 @@ export function TechnicalDetails({ data, meta }: TechnicalDetailsProps) {
             </div>
 
             {/* Cache Resolution & Diagnostics */}
-            <div className="rounded-lg border border-zinc-800/80 bg-zinc-950/60 p-3 min-w-0">
+            <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/80 p-3.5 min-w-0">
               <span className="text-[11px] uppercase text-zinc-400 block font-semibold font-sans">
                 Cache Resolution & Request
               </span>
               <div className="mt-1 flex items-center gap-2">
                 <span className="text-zinc-400 font-sans">Status:</span>
                 {meta.cache.hit ? (
-                  <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-emerald-400 text-[10px] font-semibold border border-emerald-500/20 font-sans">
+                  <Badge variant="success" className="text-[10px] font-sans">
                     Redis Hit
-                  </span>
+                  </Badge>
                 ) : (
-                  <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-zinc-300 text-[10px] border border-zinc-700 font-sans">
+                  <Badge variant="secondary" className="text-[10px] font-sans">
                     Live Upstream Fetch
-                  </span>
+                  </Badge>
                 )}
               </div>
               <div className="mt-1.5 flex items-center justify-between text-[10px] text-zinc-500 min-w-0">
@@ -186,14 +191,15 @@ export function TechnicalDetails({ data, meta }: TechnicalDetailsProps) {
 
           {/* Calldata Input if available */}
           {data.technical?.inputData && (
-            <div className="rounded-lg border border-zinc-800/80 bg-zinc-950/60 p-3 min-w-0">
+            <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/80 p-3.5 min-w-0">
               <div className="flex items-center justify-between text-zinc-400 mb-1">
-                <span className="uppercase text-[11px] font-semibold text-zinc-400 font-sans">
-                  Input Calldata
+                <span className="uppercase text-[11px] font-semibold text-zinc-400 font-sans flex items-center gap-1.5">
+                  <Terminal className="h-3.5 w-3.5 text-zinc-400" />
+                  <span>Input Calldata</span>
                 </span>
                 <CopyButton text={data.technical.inputData} label="calldata" />
               </div>
-              <p className="break-all text-[11px] text-zinc-400 max-h-24 overflow-y-auto font-mono">
+              <p className="break-all text-[11px] text-zinc-400 max-h-24 overflow-y-auto font-mono bg-zinc-900/40 p-2 rounded-lg border border-zinc-850">
                 {data.technical.inputData}
               </p>
             </div>
@@ -206,17 +212,10 @@ export function TechnicalDetails({ data, meta }: TechnicalDetailsProps) {
                 href={data.explorerUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 font-sans text-xs font-medium text-zinc-200 transition hover:bg-zinc-800 hover:text-white"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-750 bg-zinc-900 px-3.5 py-1.5 font-sans text-xs font-medium text-zinc-200 transition-colors hover:bg-zinc-800 hover:text-white"
               >
                 <span>View on block explorer</span>
-                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                  />
-                </svg>
+                <ExternalLink className="h-3.5 w-3.5 text-zinc-400" aria-hidden="true" />
               </a>
             </div>
           )}

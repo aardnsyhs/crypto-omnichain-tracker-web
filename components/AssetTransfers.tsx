@@ -1,9 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import type { TransactionData, TokenTransferItem } from '../lib/api-types';
 import { formatReadableAmount, truncateHashOrAddress } from '../lib/validation';
 import { CopyButton } from './CopyButton';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
 
 interface AssetTransfersProps {
   data: TransactionData;
@@ -99,27 +102,26 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
 
   return (
     <section aria-label="Asset transfers" className="p-5 sm:p-6 min-w-0">
-      {/* Header bar */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2 min-w-0">
         <div className="flex items-center gap-2">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 font-sans">
             Asset transfers
           </h3>
-          <span className="rounded border border-zinc-800 bg-zinc-950 px-2 py-0.5 font-mono text-[11px] text-zinc-400">
+          <Badge variant="outline" className="font-mono text-[11px] text-zinc-300">
             {totalMovements} {totalMovements === 1 ? 'transfer' : 'transfers'}
-          </span>
+          </Badge>
         </div>
         {hasMore && (
           <span className="font-sans text-xs text-zinc-500">
             {isExpanded
               ? `Showing all ${totalMovements} transfers`
-              : `Showing 1–${DEFAULT_LIMIT} of ${totalMovements} transfers`}
+              : `Showing 1 to ${DEFAULT_LIMIT} of ${totalMovements} transfers`}
           </span>
         )}
       </div>
 
       {/* 1. DESKTOP VIEW: Aligned 6-Column Ledger Table (hidden on mobile, visible on md+) */}
-      <div className="hidden md:block rounded-lg border border-zinc-800/80 bg-zinc-950/60 overflow-hidden min-w-0">
+      <div className="hidden md:block rounded-xl border border-zinc-800/80 bg-zinc-950/80 overflow-hidden min-w-0 shadow-sm">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-b border-zinc-800/80 bg-zinc-900/60 font-sans text-zinc-400 font-semibold">
@@ -131,7 +133,7 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
               <th className="py-2.5 px-3 text-center w-20">Details</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-800/50">
+          <tbody className="divide-y divide-zinc-850/60">
             {visibleMovements.map((item) => {
               const val = formatReadableAmount(item.formattedAmount);
               const isNative = item.type === 'native';
@@ -139,7 +141,7 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
 
               return (
                 <React.Fragment key={item.id}>
-                  <tr className="transition hover:bg-zinc-900/30">
+                  <tr className="transition-colors hover:bg-zinc-850/30">
                     {/* 1. Index */}
                     <td className="py-3 px-3.5 text-center font-mono text-xs font-semibold text-zinc-500">
                       #{item.index}
@@ -148,15 +150,12 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
                     {/* 2. Asset */}
                     <td className="py-3 px-3 min-w-0">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <span
-                          className={`inline-flex shrink-0 items-center rounded px-1.5 py-0.2 font-sans text-[10px] font-medium ${
-                            isNative
-                              ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-                              : 'border border-zinc-700 bg-zinc-800/80 text-zinc-300'
-                          }`}
+                        <Badge
+                          variant={isNative ? 'success' : 'default'}
+                          className="text-[10px] py-0 px-1.5 font-sans shrink-0"
                         >
                           {isNative ? 'Native' : 'ERC-20'}
-                        </span>
+                        </Badge>
                         <span className="font-sans font-semibold text-zinc-100 truncate" title={item.name || item.symbol}>
                           {item.symbol}
                         </span>
@@ -226,13 +225,15 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
 
                     {/* 6. Details Action */}
                     <td className="py-3 px-3 text-center">
-                      <button
+                      <Button
                         type="button"
+                        variant="outline"
+                        size="sm"
                         onClick={() => toggleRowDetail(item.id)}
-                        className="font-sans text-[11px] text-zinc-400 hover:text-zinc-200 px-2 py-0.5 rounded border border-zinc-800 bg-zinc-900 transition"
+                        className="font-sans text-[11px] h-6 px-2 text-zinc-400 hover:text-zinc-200"
                       >
                         {isRowOpen ? 'Hide' : 'Details'}
-                      </button>
+                      </Button>
                     </td>
                   </tr>
 
@@ -258,18 +259,11 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
                                 <span className="font-mono text-zinc-300">#{item.logIndex}</span>
                               </div>
                             )}
-
-                            {item.decimals !== null && item.decimals !== undefined && (
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-zinc-500 font-medium">Decimals:</span>
-                                <span className="font-mono text-zinc-300">{item.decimals}</span>
-                              </div>
-                            )}
                           </div>
 
-                          <div className="flex items-center gap-2 text-right ml-auto">
+                          <div className="flex items-center gap-1.5">
                             <span className="text-zinc-500 font-medium">Exact amount:</span>
-                            <span className="font-mono font-semibold text-zinc-200 select-all">
+                            <span className="font-mono font-semibold text-zinc-200 select-all" title={item.formattedAmount !== null ? val.exact : item.rawAmount}>
                               {item.formattedAmount !== null
                                 ? `${val.exact} ${item.symbol}`
                                 : `${item.rawAmount} (Raw amount, decimals unavailable)`}
@@ -290,96 +284,103 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
           </tbody>
         </table>
 
-        {/* Desktop Expand / Collapse Button */}
+        {/* Expand / Collapse Button Bar */}
         {hasMore && (
-          <div className="p-3 text-center bg-zinc-950/80 border-t border-zinc-800/60">
-            <button
+          <div className="p-3 text-center bg-zinc-950/90 border-t border-zinc-800">
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 font-sans text-xs font-semibold text-zinc-200 transition hover:bg-zinc-800 hover:text-white focus:outline-none focus:ring-1 focus:ring-zinc-400"
+              className="gap-2 font-sans text-xs font-semibold"
             >
               <span>
                 {isExpanded
                   ? 'Show first 5'
                   : `Show all ${totalMovements} transfers`}
               </span>
-              <span className="font-mono text-[11px]">{isExpanded ? '▲' : '▼'}</span>
-            </button>
+              {isExpanded ? (
+                <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+              )}
+            </Button>
           </div>
         )}
       </div>
 
-      {/* 2. MOBILE VIEW: Structured Vertical Layout (hidden on md+, visible on mobile) */}
-      <div className="md:hidden divide-y divide-zinc-800/60 rounded-lg border border-zinc-800/80 bg-zinc-950/60 overflow-hidden min-w-0">
+      {/* 2. MOBILE VIEW: Stacked Card List (< 768px, specifically 320px & 375px) */}
+      <div className="md:hidden space-y-3 min-w-0">
         {visibleMovements.map((item) => {
           const val = formatReadableAmount(item.formattedAmount);
           const isNative = item.type === 'native';
           const isRowOpen = openRowIds.has(item.id);
 
           return (
-            <div key={item.id} className="p-3.5 transition hover:bg-zinc-900/30 min-w-0">
-              {/* Header: # Index, Asset & Formatted Nominal */}
-              <div className="flex items-center justify-between gap-2 pb-2 min-w-0 border-b border-zinc-900">
+            <div
+              key={item.id}
+              className="rounded-xl border border-zinc-800/80 bg-zinc-950/80 p-3.5 shadow-sm min-w-0"
+            >
+              {/* Card Header: Asset Type, Index, and Token Name */}
+              <div className="flex items-center justify-between border-b border-zinc-850/80 pb-2.5 min-w-0">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="font-mono text-xs font-bold text-zinc-500 shrink-0">
+                  <span className="font-mono text-xs font-semibold text-zinc-500">
                     #{item.index}
                   </span>
-                  <span
-                    className={`inline-flex shrink-0 items-center rounded px-1.5 py-0.2 font-sans text-[10px] font-medium ${
-                      isNative
-                        ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-                        : 'border border-zinc-700 bg-zinc-800 text-zinc-300'
-                    }`}
+                  <Badge
+                    variant={isNative ? 'success' : 'default'}
+                    className="text-[10px] py-0 px-1.5 font-sans"
                   >
                     {isNative ? 'Native' : 'ERC-20'}
-                  </span>
-                  <span className="font-sans font-semibold text-xs text-zinc-100 truncate min-w-0">
-                    {item.name ? `${item.name} (${item.symbol})` : item.symbol}
+                  </Badge>
+                  <span className="font-sans font-bold text-sm text-zinc-100 truncate min-w-0" title={item.name || item.symbol}>
+                    {item.symbol}
                   </span>
                 </div>
 
+                {/* Amount on Mobile Card Header */}
                 <div className="text-right shrink-0">
                   <span
-                    className="font-mono text-xs sm:text-sm font-bold text-zinc-100"
+                    className="font-mono text-xs font-bold text-zinc-100"
                     title={item.formattedAmount !== null ? val.exact : item.rawAmount}
                   >
                     {item.formattedAmount !== null
                       ? `${val.display} ${item.symbol}`
-                      : `${item.rawAmount} (Raw amount, decimals unavailable)`}
+                      : `${item.rawAmount} (Raw amount)`}
                   </span>
                 </div>
               </div>
 
-              {/* Line "From": Address + Icon-only Copy Button on its OWN row */}
-              <div className="flex items-center justify-between gap-2 pt-2 min-w-0">
-                <span className="font-sans text-xs text-zinc-500 shrink-0 font-medium">From:</span>
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <span
-                    className="font-mono text-xs text-zinc-200 truncate select-all"
-                    title={item.from}
-                  >
-                    {truncateHashOrAddress(item.from, 6, 4)}
-                  </span>
-                  <CopyButton text={item.from} label="sender address" iconOnly />
+              {/* Stacked Sender & Recipient: STRICTLY SEPARATE LINES FOR MOBILE READABILITY */}
+              <div className="pt-2.5 pb-1 space-y-2 text-xs font-sans min-w-0">
+                {/* From line */}
+                <div className="flex items-center justify-between gap-1.5 min-w-0">
+                  <span className="text-zinc-500 font-medium shrink-0">From:</span>
+                  <div className="flex items-center gap-1 min-w-0">
+                    <span className="font-mono text-zinc-300 text-xs truncate min-w-0" title={item.from}>
+                      {truncateHashOrAddress(item.from, 6, 4)}
+                    </span>
+                    <CopyButton text={item.from} label="sender address" iconOnly />
+                  </div>
                 </div>
-              </div>
 
-              {/* Line "To": Address + Icon-only Copy Button on its OWN row */}
-              <div className="flex items-center justify-between gap-2 pt-1.5 min-w-0">
-                <span className="font-sans text-xs text-zinc-500 shrink-0 font-medium">To:</span>
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <span
-                    className="font-mono text-xs text-zinc-200 truncate select-all"
-                    title={item.to || 'Contract Deployment'}
-                  >
-                    {item.to ? truncateHashOrAddress(item.to, 6, 4) : 'Contract Deployment'}
-                  </span>
-                  {item.to && <CopyButton text={item.to} label="recipient address" iconOnly />}
+                {/* To line */}
+                <div className="flex items-center justify-between gap-1.5 min-w-0">
+                  <span className="text-zinc-500 font-medium shrink-0">To:</span>
+                  <div className="flex items-center gap-1 min-w-0">
+                    <span
+                      className="font-mono text-zinc-300 text-xs truncate min-w-0"
+                      title={item.to || 'Contract Deployment'}
+                    >
+                      {item.to ? truncateHashOrAddress(item.to, 6, 4) : 'Contract Deployment'}
+                    </span>
+                    {item.to && <CopyButton text={item.to} label="recipient address" iconOnly />}
+                  </div>
                 </div>
               </div>
 
               {/* Row Detail Toggle */}
-              <div className="flex items-center justify-between pt-2 border-t border-zinc-900/80 mt-2 text-[11px] font-sans">
+              <div className="flex items-center justify-between pt-2 border-t border-zinc-850/80 mt-2 text-[11px] font-sans">
                 <button
                   type="button"
                   onClick={() => toggleRowDetail(item.id)}
@@ -404,7 +405,7 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
 
               {/* Expanded Forensic Detail Drawer on Mobile */}
               {isRowOpen && (
-                <div className="mt-2 p-2.5 rounded bg-zinc-900/60 border border-zinc-800 text-xs flex flex-col gap-1.5 min-w-0 font-sans">
+                <div className="mt-2 p-2.5 rounded-lg bg-zinc-900/60 border border-zinc-800 text-xs flex flex-col gap-1.5 min-w-0 font-sans">
                   {!isNative && item.tokenAddress && (
                     <div className="flex items-center justify-between gap-2 min-w-0">
                       <span className="text-zinc-500 shrink-0 font-medium">Token contract:</span>
@@ -447,19 +448,25 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
 
         {/* Mobile Expand / Collapse Button */}
         {hasMore && (
-          <div className="p-3 text-center bg-zinc-950/80">
-            <button
+          <div className="p-3 text-center bg-zinc-950/90 border border-zinc-850 rounded-xl">
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 font-sans text-xs font-semibold text-zinc-200 transition hover:bg-zinc-800 hover:text-white focus:outline-none focus:ring-1 focus:ring-zinc-400"
+              className="gap-2 font-sans text-xs font-semibold w-full"
             >
               <span>
                 {isExpanded
                   ? 'Show first 5'
                   : `Show all ${totalMovements} transfers`}
               </span>
-              <span className="font-mono text-[11px]">{isExpanded ? '▲' : '▼'}</span>
-            </button>
+              {isExpanded ? (
+                <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+              )}
+            </Button>
           </div>
         )}
       </div>

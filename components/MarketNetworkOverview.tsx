@@ -1,11 +1,16 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Activity, RefreshCw, Fuel, Layers, Coins } from 'lucide-react';
 import type {
   OverviewResponse,
   NetworkOverviewItem,
 } from '../lib/api-types';
 import { ApiClient } from '../lib/api-client';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/card';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { cn } from '../lib/utils';
 
 interface MarketNetworkOverviewProps {
   apiClient: ApiClient;
@@ -88,15 +93,25 @@ export function formatGasGwei(gweiStr: string | null): {
   };
 }
 
+export function formatSourceTimestamp(isoString: string | null): string {
+  if (!isoString) return '';
+  try {
+    const d = new Date(isoString);
+    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  } catch {
+    return '';
+  }
+}
+
 export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOverviewProps) {
   const [data, setData] = useState<NetworkOverviewItem[]>([]);
+  const [lastFetchedAt, setLastFetchedAt] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [lastFetchedAt, setLastFetchedAt] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  const isMountedRef = useRef<boolean>(true);
-  const isFetchingRef = useRef<boolean>(false);
+  const isMountedRef = useRef(true);
+  const isFetchingRef = useRef(false);
 
   const fetchOverview = useCallback(
     async (isManualRefresh = false) => {
@@ -144,364 +159,354 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
     if (!isVisible) return;
 
     const interval = setInterval(() => {
-      if (document.visibilityState === 'visible' && isVisible) {
-        void fetchOverview(false);
+      if (document.visibilityState === 'visible') {
+        void fetchOverview();
       }
     }, 45000);
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && isVisible) {
-        void fetchOverview(false);
-      }
-    };
+    return () => clearInterval(interval);
+  }, [fetchOverview, isVisible]);
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [isVisible, fetchOverview]);
-
-  // When result is active, component is completely hidden to keep focus on ledger
+  // If parent says overview is not visible (e.g. transaction result is active), don't render
   if (!isVisible) {
     return null;
   }
 
   return (
-    <section
-      aria-label="Market and Network Overview"
-      className="mt-6 rounded-lg border border-zinc-800 bg-zinc-950 p-4 sm:p-5"
-    >
-      {/* Header bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-850 pb-3">
-        <div>
-          <h2 className="text-base font-semibold text-zinc-100 font-sans">
-            Market & network overview
-          </h2>
-          <p className="text-xs text-zinc-400 font-sans">
-            Live native coin prices, 24h momentum, latest blocks, and suggested gas prices across chains.
-          </p>
-        </div>
+    <section aria-label="Market and Network Overview">
+      <Card className="shadow-xl border-zinc-800/90">
+      <CardHeader className="p-4 sm:p-5 border-b border-zinc-800/80">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950 text-indigo-400">
+              <Activity className="h-4 w-4" aria-hidden="true" />
+            </div>
+            <div>
+              <CardTitle className="text-base font-semibold text-zinc-100 font-sans flex items-center gap-2">
+                <span>Market & network overview</span>
+                <span className="flex h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
+              </CardTitle>
+              <CardDescription className="text-xs text-zinc-400 font-sans mt-0.5">
+                Live native coin prices, 24h momentum, latest blocks, and suggested gas prices across chains.
+              </CardDescription>
+            </div>
+          </div>
 
-        <div className="flex items-center gap-3">
-          {lastFetchedAt && (
-            <span className="text-xs text-zinc-400 font-mono" title={lastFetchedAt}>
-              Updated {new Date(lastFetchedAt).toLocaleTimeString()}
-            </span>
-          )}
+          <div className="flex items-center gap-3">
+            {lastFetchedAt && (
+              <span className="font-mono text-[11px] text-zinc-500">
+                Updated {new Date(lastFetchedAt).toLocaleTimeString()}
+              </span>
+            )}
 
-          <button
-            type="button"
-            onClick={() => void fetchOverview(true)}
-            disabled={isRefreshing || isLoading}
-            aria-label="Refresh market and network overview"
-            className="inline-flex items-center gap-1.5 rounded border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-400 disabled:opacity-50"
-          >
-            <svg
-              className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void fetchOverview(true)}
+              disabled={isRefreshing || isLoading}
+              aria-label="Refresh market and network overview"
+              className="gap-1.5 font-sans"
             >
-              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-              <path d="M3 3v5h5" />
-              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-              <path d="M16 21h5v-5" />
-            </svg>
-            <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Global Fetch Error Banner */}
-      {fetchError && !data.length && (
-        <div className="mt-4 rounded border border-rose-900/50 bg-rose-950/20 p-3 text-xs text-rose-300">
-          <p className="font-medium">Overview temporarily unavailable</p>
-          <p className="mt-0.5 text-rose-400/80">{fetchError}</p>
-        </div>
-      )}
-
-      {/* Loading Skeleton */}
-      {isLoading && !data.length && (
-        <div className="mt-4 space-y-3" aria-busy="true" aria-label="Loading overview data">
-          <div className="hidden md:block">
-            <div className="h-10 w-full animate-pulse rounded bg-zinc-900/60" />
-            <div className="mt-2 h-12 w-full animate-pulse rounded bg-zinc-900/40" />
-            <div className="mt-2 h-12 w-full animate-pulse rounded bg-zinc-900/40" />
-            <div className="mt-2 h-12 w-full animate-pulse rounded bg-zinc-900/40" />
-          </div>
-          <div className="space-y-3 md:hidden">
-            <div className="h-28 w-full animate-pulse rounded border border-zinc-900 bg-zinc-900/40" />
-            <div className="h-28 w-full animate-pulse rounded border border-zinc-900 bg-zinc-900/40" />
-            <div className="h-28 w-full animate-pulse rounded border border-zinc-900 bg-zinc-900/40" />
+              <RefreshCw
+                className={cn('h-3.5 w-3.5', isRefreshing && 'animate-spin')}
+                aria-hidden="true"
+              />
+              <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+            </Button>
           </div>
         </div>
-      )}
+      </CardHeader>
 
-      {/* Loaded State */}
-      {Boolean(data.length) && (
-        <>
-          {/* Desktop Table View (>= 768px) */}
-          <div className="mt-3 hidden overflow-x-auto md:block">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-zinc-850 text-zinc-400 font-sans">
-                  <th scope="col" className="py-2.5 pr-4 font-medium">
-                    Network
-                  </th>
-                  <th scope="col" className="py-2.5 px-4 font-medium text-right">
-                    Price (USD)
-                  </th>
-                  <th scope="col" className="py-2.5 px-4 font-medium text-right">
-                    24h Change
-                  </th>
-                  <th scope="col" className="py-2.5 px-4 font-medium text-right">
-                    Latest Block
-                  </th>
-                  <th scope="col" className="py-2.5 px-4 font-medium text-right">
-                    Block Time
-                  </th>
-                  <th scope="col" className="py-2.5 px-4 font-medium text-right">
-                    Suggested Gas
-                  </th>
-                  <th scope="col" className="py-2.5 pl-4 font-medium text-right">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-900">
-                {data.map((item) => {
-                  const change = formatChange24h(item.market?.change24h ?? null);
-                  const gas = formatGasGwei(item.network?.suggestedGasPriceGwei ?? null);
+      <CardContent className="p-4 sm:p-5 pt-3">
+        {/* Global Fetch Error Banner */}
+        {fetchError && !data.length && (
+          <div className="rounded-lg border border-rose-900/50 bg-rose-950/20 p-3.5 text-xs text-rose-300">
+            <p className="font-semibold font-sans">Overview temporarily unavailable</p>
+            <p className="mt-0.5 text-rose-400/90 font-sans">{fetchError}</p>
+          </div>
+        )}
 
-                  return (
-                    <tr
-                      key={item.chain}
-                      className="transition-colors hover:bg-zinc-900/30"
-                    >
-                      {/* Network & Symbol */}
-                      <td className="py-3 pr-4 font-sans">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-zinc-200">
-                            {item.name}
-                          </span>
-                          <span className="rounded bg-zinc-850 px-1.5 py-0.5 text-[11px] font-mono font-medium text-zinc-400">
-                            {item.nativeSymbol}
-                          </span>
-                        </div>
-                        <div className="text-[10px] text-zinc-500 font-sans mt-0.5">
-                          Source: {item.market?.source || 'Unavailable'} / {item.network?.source || 'Unavailable'}
-                        </div>
-                      </td>
+        {/* Loading Skeleton */}
+        {isLoading && !data.length && (
+          <div className="space-y-3" aria-busy="true" aria-label="Loading overview data">
+            <div className="hidden md:block">
+              <div className="h-10 w-full animate-pulse rounded bg-zinc-900/60" />
+              <div className="mt-2 h-12 w-full animate-pulse rounded bg-zinc-900/40" />
+              <div className="mt-2 h-12 w-full animate-pulse rounded bg-zinc-900/40" />
+              <div className="mt-2 h-12 w-full animate-pulse rounded bg-zinc-900/40" />
+            </div>
+            <div className="space-y-3 md:hidden">
+              <div className="h-28 w-full animate-pulse rounded border border-zinc-900 bg-zinc-900/40" />
+              <div className="h-28 w-full animate-pulse rounded border border-zinc-900 bg-zinc-900/40" />
+              <div className="h-28 w-full animate-pulse rounded border border-zinc-900 bg-zinc-900/40" />
+            </div>
+          </div>
+        )}
 
-                      {/* Native Coin Price */}
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-zinc-100">
-                        {formatUsdPrice(item.market?.priceUsd ?? null)}
-                      </td>
+        {/* Loaded State */}
+        {Boolean(data.length) && (
+          <>
+            {/* Desktop Table View (>= 768px) */}
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-zinc-800 text-zinc-400 font-sans">
+                    <th scope="col" className="py-2.5 pr-4 font-semibold">
+                      Network
+                    </th>
+                    <th scope="col" className="py-2.5 px-4 font-semibold text-right">
+                      Price (USD)
+                    </th>
+                    <th scope="col" className="py-2.5 px-4 font-semibold text-right">
+                      24h Change
+                    </th>
+                    <th scope="col" className="py-2.5 px-4 font-semibold text-right">
+                      Latest Block
+                    </th>
+                    <th scope="col" className="py-2.5 px-4 font-semibold text-right">
+                      Block Time
+                    </th>
+                    <th scope="col" className="py-2.5 px-4 font-semibold text-right">
+                      Suggested Gas
+                    </th>
+                    <th scope="col" className="py-2.5 pl-4 font-semibold text-right">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-850/60">
+                  {data.map((item) => {
+                    const change = formatChange24h(item.market?.change24h ?? null);
+                    const gas = formatGasGwei(item.network?.suggestedGasPriceGwei ?? null);
 
-                      {/* 24h Change */}
-                      <td
-                        className={`py-3 px-4 text-right font-mono tabular-nums font-medium ${change.colorClass}`}
+                    return (
+                      <tr
+                        key={item.chain}
+                        className="transition-colors hover:bg-zinc-850/30"
                       >
-                        {change.text}
-                      </td>
-
-                      {/* Latest Block */}
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-zinc-200">
-                        {item.network?.latestBlockNumber !== null &&
-                        item.network?.latestBlockNumber !== undefined
-                          ? `#${item.network.latestBlockNumber.toLocaleString('en-US')}`
-                          : 'Unavailable'}
-                      </td>
-
-                      {/* Block Timestamp */}
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-zinc-400">
-                        {formatRelativeTime(item.network?.latestBlockTimestamp ?? null)}
-                      </td>
-
-                      {/* Suggested Gas Price */}
-                      <td
-                        className="py-3 px-4 text-right font-mono tabular-nums text-zinc-300"
-                        title={gas.exact ? `Exact: ${gas.exact}` : undefined}
-                      >
-                        {gas.display}
-                      </td>
-
-                      {/* Status Badges */}
-                      <td className="py-3 pl-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {item.market?.isStale && (
-                            <span className="rounded bg-amber-950/60 px-1.5 py-0.5 text-[10px] font-medium text-amber-300 border border-amber-800/40">
-                              Stale Market
+                        {/* Network & Symbol */}
+                        <td className="py-3 pr-4 font-sans">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-zinc-100">
+                              {item.name}
                             </span>
-                          )}
-                          {item.network?.isStale && (
-                            <span className="rounded bg-amber-950/60 px-1.5 py-0.5 text-[10px] font-medium text-amber-300 border border-amber-800/40">
-                              Stale Node
+                            <span className="rounded bg-zinc-850 px-1.5 py-0.5 text-[11px] font-mono font-medium text-zinc-400 border border-zinc-750/50">
+                              {item.nativeSymbol}
                             </span>
-                          )}
-                          {item.market?.status === 'rate_limited' && (
-                            <span className="rounded bg-zinc-850 px-1.5 py-0.5 text-[10px] font-medium text-zinc-400">
-                              Rate Limited
-                            </span>
-                          )}
-                          {item.network?.status === 'unavailable' && (
-                            <span className="rounded bg-zinc-850 px-1.5 py-0.5 text-[10px] font-medium text-zinc-400">
-                              Unavailable
-                            </span>
-                          )}
-                          {!item.market?.isStale &&
-                            !item.network?.isStale &&
-                            item.market?.status === 'available' &&
-                            item.network?.status === 'available' && (
-                              <span className="text-[11px] font-medium text-emerald-400 font-sans">
-                                Live
-                              </span>
+                          </div>
+                          <div className="text-[10px] text-zinc-500 font-sans mt-0.5">
+                            Source: {item.market?.source || 'Unavailable'} / {item.network?.source || 'Unavailable'}
+                          </div>
+                        </td>
+
+                        {/* Native Coin Price */}
+                        <td className="py-3 px-4 text-right font-mono tabular-nums text-zinc-100 font-medium">
+                          {formatUsdPrice(item.market?.priceUsd ?? null)}
+                        </td>
+
+                        {/* 24h Change */}
+                        <td
+                          className={cn('py-3 px-4 text-right font-mono tabular-nums font-semibold', change.colorClass)}
+                        >
+                          {change.text}
+                        </td>
+
+                        {/* Latest Block */}
+                        <td className="py-3 px-4 text-right font-mono tabular-nums text-zinc-200">
+                          {item.network?.latestBlockNumber !== null &&
+                          item.network?.latestBlockNumber !== undefined
+                            ? `#${item.network.latestBlockNumber.toLocaleString('en-US')}`
+                            : 'Unavailable'}
+                        </td>
+
+                        {/* Block Timestamp */}
+                        <td className="py-3 px-4 text-right font-mono tabular-nums text-zinc-400">
+                          {formatRelativeTime(item.network?.latestBlockTimestamp ?? null)}
+                        </td>
+
+                        {/* Suggested Gas Price */}
+                        <td
+                          className="py-3 px-4 text-right font-mono tabular-nums text-zinc-300"
+                          title={gas.exact ? `Exact: ${gas.exact}` : undefined}
+                        >
+                          {gas.display}
+                        </td>
+
+                        {/* Status Badges */}
+                        <td className="py-3 pl-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {item.market?.isStale && (
+                              <Badge variant="warning" className="font-sans text-[10px]">
+                                Stale Market
+                              </Badge>
                             )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                            {item.network?.isStale && (
+                              <Badge variant="warning" className="font-sans text-[10px]">
+                                Stale Node
+                              </Badge>
+                            )}
+                            {item.market?.status === 'rate_limited' && (
+                              <Badge variant="secondary" className="font-sans text-[10px]">
+                                Rate Limited
+                              </Badge>
+                            )}
+                            {item.network?.status === 'unavailable' && (
+                              <Badge variant="secondary" className="font-sans text-[10px]">
+                                Unavailable
+                              </Badge>
+                            )}
+                            {!item.market?.isStale &&
+                              !item.network?.isStale &&
+                              item.market?.status === 'available' &&
+                              item.network?.status === 'available' && (
+                                <span className="text-[11px] font-semibold text-emerald-400 font-sans">
+                                  Live
+                                </span>
+                              )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
 
-          {/* Mobile Card View (< 768px) */}
-          <div className="mt-3 space-y-3 md:hidden">
-            {data.map((item) => {
-              const change = formatChange24h(item.market?.change24h ?? null);
-              const gas = formatGasGwei(item.network?.suggestedGasPriceGwei ?? null);
+            {/* Mobile Card View (< 768px) */}
+            <div className="space-y-3 md:hidden">
+              {data.map((item) => {
+                const change = formatChange24h(item.market?.change24h ?? null);
+                const gas = formatGasGwei(item.network?.suggestedGasPriceGwei ?? null);
 
-              return (
-                <div
-                  key={item.chain}
-                  className="rounded border border-zinc-850 bg-zinc-900/40 p-3.5"
-                >
-                  {/* Card Header: Network Name + Symbol + Status */}
-                  <div className="flex items-center justify-between border-b border-zinc-850/80 pb-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm text-zinc-100 font-sans">
-                        {item.name}
-                      </span>
-                      <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[11px] font-mono font-medium text-zinc-400">
-                        {item.nativeSymbol}
-                      </span>
-                    </div>
+                return (
+                  <div
+                    key={item.chain}
+                    className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3.5 shadow-sm"
+                  >
+                    {/* Card Header: Network Name + Symbol + Status */}
+                    <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm text-zinc-100 font-sans">
+                          {item.name}
+                        </span>
+                        <span className="rounded bg-zinc-850 px-1.5 py-0.5 text-[11px] font-mono font-medium text-zinc-400 border border-zinc-750/50">
+                          {item.nativeSymbol}
+                        </span>
+                      </div>
 
-                    <div className="flex items-center gap-1.5">
-                      {item.market?.isStale && (
-                        <span className="rounded bg-amber-950/60 px-1.5 py-0.5 text-[10px] font-medium text-amber-300 border border-amber-800/40">
-                          Stale Market
-                        </span>
-                      )}
-                      {item.network?.isStale && (
-                        <span className="rounded bg-amber-950/60 px-1.5 py-0.5 text-[10px] font-medium text-amber-300 border border-amber-800/40">
-                          Stale Node
-                        </span>
-                      )}
-                      {item.network?.status === 'unavailable' && (
-                        <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] font-medium text-zinc-400">
-                          Unavailable
-                        </span>
-                      )}
-                      {!item.market?.isStale &&
-                        !item.network?.isStale &&
-                        item.market?.status === 'available' &&
-                        item.network?.status === 'available' && (
-                          <span className="text-[11px] font-medium text-emerald-400 font-sans">
-                            Live
-                          </span>
+                      <div className="flex items-center gap-1.5">
+                        {item.market?.isStale && (
+                          <Badge variant="warning" className="text-[10px]">
+                            Stale Market
+                          </Badge>
                         )}
+                        {item.network?.isStale && (
+                          <Badge variant="warning" className="text-[10px]">
+                            Stale Node
+                          </Badge>
+                        )}
+                        {item.market?.status === 'rate_limited' && (
+                          <Badge variant="secondary" className="text-[10px]">
+                            Rate Limited
+                          </Badge>
+                        )}
+                        {item.network?.status === 'unavailable' && (
+                          <Badge variant="secondary" className="text-[10px]">
+                            Unavailable
+                          </Badge>
+                        )}
+                        {!item.market?.isStale &&
+                          !item.network?.isStale &&
+                          item.market?.status === 'available' &&
+                          item.network?.status === 'available' && (
+                            <span className="text-xs font-semibold text-emerald-400 font-sans">
+                              Live
+                            </span>
+                          )}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* 2-Column Metrics Grid */}
-                  <div className="mt-2.5 grid grid-cols-2 gap-y-2.5 gap-x-3 text-xs">
-                    <div>
-                      <span className="text-[11px] text-zinc-400 font-sans block">
-                        Native Price
-                      </span>
-                      <span className="font-mono tabular-nums font-medium text-zinc-100 text-sm">
-                        {formatUsdPrice(item.market?.priceUsd ?? null)}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-[11px] text-zinc-400 font-sans block">
-                        24h Change
-                      </span>
-                      <span
-                        className={`font-mono tabular-nums font-medium text-sm ${change.colorClass}`}
-                      >
-                        {change.text}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-[11px] text-zinc-400 font-sans block">
-                        Latest Block
-                      </span>
-                      <span className="font-mono tabular-nums text-zinc-200">
-                        {item.network?.latestBlockNumber !== null &&
-                        item.network?.latestBlockNumber !== undefined
-                          ? `#${item.network.latestBlockNumber.toLocaleString('en-US')}`
-                          : 'Unavailable'}
-                      </span>
-                      {item.network?.latestBlockTimestamp && (
-                        <span className="text-[10px] text-zinc-400 font-mono block">
-                          {formatRelativeTime(item.network.latestBlockTimestamp)}
+                    {/* Metrics Grid */}
+                    <div className="grid grid-cols-2 gap-3 pt-3">
+                      <div>
+                        <span className="text-[11px] text-zinc-500 font-sans flex items-center gap-1">
+                          <Coins className="h-3 w-3 text-zinc-400" />
+                          <span>Native Price</span>
                         </span>
-                      )}
-                    </div>
+                        <div className="font-mono text-sm font-semibold text-zinc-100 tabular-nums mt-0.5">
+                          {formatUsdPrice(item.market?.priceUsd ?? null)}
+                        </div>
+                      </div>
 
-                    <div>
-                      <span className="text-[11px] text-zinc-400 font-sans block">
-                        Suggested Gas
-                      </span>
-                      <span className="font-mono tabular-nums text-zinc-200">
-                        {gas.display}
-                      </span>
-                      {gas.exact && (
-                        <span className="text-[10px] text-zinc-400 font-mono block truncate" title={gas.exact}>
-                          {gas.exact}
+                      <div>
+                        <span className="text-[11px] text-zinc-500 font-sans">24h Change</span>
+                        <div className={cn('font-mono text-sm font-semibold tabular-nums mt-0.5', change.colorClass)}>
+                          {change.text}
+                        </div>
+                      </div>
+
+                      <div>
+                        <span className="text-[11px] text-zinc-500 font-sans flex items-center gap-1">
+                          <Layers className="h-3 w-3 text-zinc-400" />
+                          <span>Latest Block</span>
                         </span>
-                      )}
+                        <div className="font-mono text-xs text-zinc-200 tabular-nums mt-0.5">
+                          {item.network?.latestBlockNumber !== null &&
+                          item.network?.latestBlockNumber !== undefined
+                            ? `#${item.network.latestBlockNumber.toLocaleString('en-US')}`
+                            : 'Unavailable'}
+                        </div>
+                        <div className="text-[10px] text-zinc-500 font-mono mt-0.5">
+                          {formatRelativeTime(item.network?.latestBlockTimestamp ?? null)}
+                        </div>
+                      </div>
+
+                      <div>
+                        <span className="text-[11px] text-zinc-500 font-sans flex items-center gap-1">
+                          <Fuel className="h-3 w-3 text-zinc-400" />
+                          <span>Suggested Gas</span>
+                        </span>
+                        <div className="font-mono text-xs text-zinc-200 tabular-nums mt-0.5">
+                          {gas.display}
+                        </div>
+                        {gas.exact && gas.exact !== gas.display && (
+                          <div className="text-[10px] text-zinc-500 font-mono truncate max-w-[120px] mt-0.5">
+                            {gas.exact}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Source and Timestamps */}
+                    <div className="mt-3 border-t border-zinc-850/80 pt-2 text-[10px] text-zinc-500 font-sans space-y-0.5">
+                      <div>
+                        Market: {item.market?.source || 'Unavailable'}
+                        {item.market?.updatedAt && ` (${formatSourceTimestamp(item.market.updatedAt)})`}
+                      </div>
+                      <div>
+                        Node: {item.network?.source || 'Unavailable'}
+                        {item.network?.updatedAt && ` (${formatSourceTimestamp(item.network.updatedAt)})`}
+                      </div>
                     </div>
                   </div>
+                );
+              })}
+            </div>
 
-                  {/* Mobile Source Info Footer (visible without hover) */}
-                  <div className="mt-2.5 pt-2 border-t border-zinc-850/60 flex flex-wrap items-center justify-between text-[10px] text-zinc-400 font-sans">
-                    <span>
-                      Market: {item.market?.source || 'Unavailable'}
-                      {item.market?.updatedAt && ` (${new Date(item.market.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`}
-                    </span>
-                    <span>
-                      Node: {item.network?.source || 'Unavailable'}
-                      {item.network?.updatedAt && ` (${new Date(item.network.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Desktop Footnote */}
-          <div className="mt-3 hidden md:flex items-center justify-between text-[11px] text-zinc-400 font-sans border-t border-zinc-900 pt-2.5">
-            <p>
-              Sources: Blockchair (Ethereum stats), CoinGecko (market quotes), EVM RPC (network blocks and gas).
-            </p>
-            <p className="text-zinc-400">
-              Suggested by the data provider. Actual transaction fees depend on gas used and fee settings.
-            </p>
-          </div>
-        </>
-      )}
+            {/* Explanatory Note & Source Attribution */}
+            <div className="mt-4 border-t border-zinc-850/80 pt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-[11px] text-zinc-500 font-sans">
+              <div>
+                Sources: Blockchair (Ethereum stats), CoinGecko (market quotes), EVM RPC (network blocks and gas).
+              </div>
+              <div className="text-zinc-500">
+                Suggested by the data provider. Actual transaction fees depend on gas used and fee settings.
+              </div>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
     </section>
   );
 }

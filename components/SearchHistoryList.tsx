@@ -1,8 +1,12 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
+import { History, RotateCcw, Clock } from 'lucide-react';
 import type { HistoryItem, SupportedChain } from '../lib/api-types';
 import { truncateHashOrAddress, formatTimestamp } from '../lib/validation';
+import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
 
 interface SearchHistoryListProps {
   history: HistoryItem[];
@@ -32,21 +36,21 @@ export function SearchHistoryList({ history, isLoading, onSelect }: SearchHistor
       switch (item.outcome) {
         case 'not_found':
           return (
-            <span className="rounded border border-zinc-800 bg-zinc-950 px-1.5 py-0.5 font-mono text-[10px] font-medium text-zinc-400">
+            <Badge variant="outline" className="font-mono text-[10px]">
               Not Found
-            </span>
+            </Badge>
           );
         case 'rate_limited':
           return (
-            <span className="rounded border border-rose-500/20 bg-rose-500/10 px-1.5 py-0.5 font-mono text-[10px] font-medium text-rose-400">
+            <Badge variant="warning" className="font-mono text-[10px]">
               Rate Limited
-            </span>
+            </Badge>
           );
         default:
           return (
-            <span className="rounded border border-zinc-800 bg-zinc-950 px-1.5 py-0.5 font-mono text-[10px] font-medium text-zinc-400">
+            <Badge variant="secondary" className="font-mono text-[10px]">
               {item.outcome}
-            </span>
+            </Badge>
           );
       }
     }
@@ -55,28 +59,28 @@ export function SearchHistoryList({ history, isLoading, onSelect }: SearchHistor
     switch (item.txStatus) {
       case 'confirmed':
         return (
-          <span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[10px] font-medium text-emerald-400">
+          <Badge variant="success" className="font-mono text-[10px]">
             Confirmed
-          </span>
+          </Badge>
         );
       case 'failed':
         return (
-          <span className="rounded border border-rose-500/20 bg-rose-500/10 px-1.5 py-0.5 font-mono text-[10px] font-medium text-rose-400">
+          <Badge variant="destructive" className="font-mono text-[10px]">
             Failed
-          </span>
+          </Badge>
         );
       case 'pending':
         return (
-          <span className="rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 font-mono text-[10px] font-medium text-amber-400">
+          <Badge variant="warning" className="font-mono text-[10px]">
             Pending
-          </span>
+          </Badge>
         );
       case 'unknown':
       default:
         return (
-          <span className="rounded border border-zinc-800 bg-zinc-950 px-1.5 py-0.5 font-mono text-[10px] font-medium text-zinc-400">
+          <Badge variant="secondary" className="font-mono text-[10px]">
             Unknown
-          </span>
+          </Badge>
         );
     }
   };
@@ -89,76 +93,90 @@ export function SearchHistoryList({ history, isLoading, onSelect }: SearchHistor
     };
     const symbol = chainMap[chain.toLowerCase()] || chain.toUpperCase();
     return (
-      <span className="inline-flex items-center rounded border border-zinc-800 bg-zinc-950 px-1.5 py-0.5 font-mono text-[10px] font-medium text-zinc-300">
+      <span className="inline-flex items-center rounded-md border border-zinc-800 bg-zinc-950 px-2 py-0.5 font-mono text-[10px] font-semibold text-zinc-300 shadow-inner">
         {symbol}
       </span>
     );
   };
 
   return (
-    <section className="w-full overflow-hidden rounded-xl border border-zinc-800/80 bg-zinc-900/60 shadow-xl backdrop-blur-sm">
-      <div className="flex items-center justify-between border-b border-zinc-800/80 px-5 py-4">
-        <h2 className="text-xs font-sans uppercase tracking-wider text-zinc-400 font-semibold">Recent searches</h2>
+    <Card className="w-full shadow-xl border-zinc-800/90 overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-zinc-800/80 px-5 py-4">
+        <div className="flex items-center gap-2">
+          <History className="h-4 w-4 text-zinc-400" />
+          <CardTitle className="text-xs font-sans uppercase tracking-wider text-zinc-400 font-semibold">
+            Recent searches
+          </CardTitle>
+        </div>
         <span className="font-mono text-xs text-zinc-500">
           {dedupedHistory.length} {dedupedHistory.length === 1 ? 'transaction' : 'transactions'}
           {history.length > dedupedHistory.length && (
             <span className="text-zinc-600 ml-1">({history.length} searches)</span>
           )}
         </span>
-      </div>
+      </CardHeader>
 
-      {isLoading && dedupedHistory.length === 0 ? (
-        <div className="py-8 text-center font-sans text-xs text-zinc-500 animate-pulse">
-          Loading search history...
-        </div>
-      ) : dedupedHistory.length === 0 ? (
-        <div className="py-8 text-center">
-          <p className="font-sans text-xs text-zinc-400">
-            No transactions searched yet in this session.
-          </p>
-          <p className="mt-1 font-sans text-[11px] text-zinc-600">
-            Searches performed will automatically appear here.
-          </p>
-        </div>
-      ) : (
-        <div className="divide-y divide-zinc-800/40">
-          {dedupedHistory.map((item) => (
-            <div
-              key={item.id}
-              className="flex flex-col gap-2.5 px-3.5 py-3 transition hover:bg-zinc-800/30 sm:px-5 sm:flex-row sm:items-center sm:justify-between min-w-0"
-            >
-              <div className="flex flex-wrap items-center gap-2 min-w-0">
-                {getChainBadge(item.chain)}
-                <span className="font-mono text-xs text-zinc-200 truncate min-w-0" title={item.transactionHash}>
-                  {truncateHashOrAddress(item.transactionHash, 6, 4)}
-                </span>
-                {getStatusBadge(item)}
-                {item.cacheHit && (
+      <CardContent className="p-0">
+        {isLoading && dedupedHistory.length === 0 ? (
+          <div className="py-8 text-center font-sans text-xs text-zinc-500 animate-pulse">
+            Loading search history...
+          </div>
+        ) : dedupedHistory.length === 0 ? (
+          <div className="py-8 text-center px-4">
+            <Clock className="h-6 w-6 text-zinc-600 mx-auto mb-2" />
+            <p className="font-sans text-xs text-zinc-400 font-medium">
+              No transactions searched yet in this session.
+            </p>
+            <p className="mt-1 font-sans text-[11px] text-zinc-600">
+              Searches performed will automatically appear here.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-zinc-850/60">
+            {dedupedHistory.map((item) => (
+              <div
+                key={item.id}
+                className="group flex flex-col gap-2.5 px-3.5 py-3 transition-colors hover:bg-zinc-850/30 sm:px-5 sm:flex-row sm:items-center sm:justify-between min-w-0"
+              >
+                <div className="flex flex-wrap items-center gap-2 min-w-0">
+                  {getChainBadge(item.chain)}
                   <span
-                    title="Served from Redis cache"
-                    className="inline-flex shrink-0 items-center rounded bg-emerald-500/10 px-1.5 py-0.5 font-sans text-[10px] text-emerald-400"
+                    className="font-mono text-xs text-zinc-200 truncate min-w-0 select-all font-medium"
+                    title={item.transactionHash}
                   >
-                    cache
+                    {truncateHashOrAddress(item.transactionHash, 6, 4)}
                   </span>
-                )}
-              </div>
+                  {getStatusBadge(item)}
+                  {item.cacheHit && (
+                    <span
+                      title="Served from Redis cache"
+                      className="inline-flex shrink-0 items-center rounded bg-emerald-500/10 px-1.5 py-0.5 font-sans text-[10px] text-emerald-400 border border-emerald-500/20"
+                    >
+                      cache
+                    </span>
+                  )}
+                </div>
 
-              <div className="flex items-center justify-between gap-3 sm:justify-end min-w-0">
-                <span className="font-mono text-[11px] text-zinc-500 truncate" title={item.searchedAt}>
-                  {formatTimestamp(item.searchedAt)}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => onSelect(item.chain as SupportedChain, item.transactionHash)}
-                  className="shrink-0 rounded-md border border-zinc-700/80 bg-zinc-800 px-2.5 py-1 font-sans text-xs font-medium text-zinc-200 transition hover:border-zinc-600 hover:bg-zinc-700 hover:text-white"
-                >
-                  Search again
-                </button>
+                <div className="flex items-center justify-between gap-3 sm:justify-end min-w-0">
+                  <span className="font-mono text-[11px] text-zinc-500 truncate" title={item.searchedAt}>
+                    {formatTimestamp(item.searchedAt)}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => onSelect(item.chain as SupportedChain, item.transactionHash)}
+                    className="gap-1.5 text-xs font-sans group-hover:border-zinc-700"
+                  >
+                    <RotateCcw className="h-3 w-3 text-zinc-400" />
+                    <span>Search again</span>
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

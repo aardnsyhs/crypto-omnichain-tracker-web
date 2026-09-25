@@ -1,9 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import type { TransactionData, TokenTransferItem } from '../lib/api-types';
 import { formatReadableAmount, formatUnitsToExactDecimal, truncateHashOrAddress } from '../lib/validation';
 import { CopyButton } from './CopyButton';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
 
 interface MovingAssetsSummaryProps {
   data: TransactionData;
@@ -133,22 +136,22 @@ export function MovingAssetsSummary({ data }: MovingAssetsSummaryProps) {
           <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 font-sans">
             Assets involved
           </h3>
-          <span className="rounded border border-zinc-800 bg-zinc-950 px-2 py-0.5 font-mono text-[11px] text-zinc-400">
+          <Badge variant="outline" className="font-mono text-[11px] text-zinc-300">
             {assets.length} unique {assets.length === 1 ? 'asset' : 'assets'}
-          </span>
+          </Badge>
         </div>
         <span className="text-[11px] text-zinc-500 font-sans">
           Tokens and transfer count in this transaction.
         </span>
       </div>
 
-      {/* Compact List instead of huge cards */}
-      <div className="rounded-lg border border-zinc-800/80 bg-zinc-950/60 divide-y divide-zinc-800/50 overflow-hidden min-w-0">
+      {/* Compact List */}
+      <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/80 divide-y divide-zinc-850/60 overflow-hidden min-w-0 shadow-sm">
         {visibleAssets.map((asset) => {
           const isDetailOpen = openDetailId === asset.id;
 
           return (
-            <div key={asset.id} className="p-3 sm:px-4 transition hover:bg-zinc-900/30 min-w-0">
+            <div key={asset.id} className="p-3.5 sm:px-4 transition-colors hover:bg-zinc-900/40 min-w-0">
               <div className="flex flex-wrap items-center justify-between gap-2 min-w-0">
                 {/* Left: Token Symbol & Name */}
                 <div className="flex items-center gap-2 min-w-0">
@@ -159,30 +162,32 @@ export function MovingAssetsSummary({ data }: MovingAssetsSummaryProps) {
                     ({asset.name})
                   </span>
                   {asset.isNative && (
-                    <span className="rounded bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.2 font-sans text-[10px] text-emerald-400 shrink-0">
+                    <Badge variant="success" className="text-[10px] py-0 px-1.5 font-sans">
                       Native
-                    </span>
+                    </Badge>
                   )}
                 </div>
 
                 {/* Right: Transfer Count & Detail Toggle */}
                 <div className="flex items-center gap-2 shrink-0 ml-auto">
-                  <span className="font-mono text-xs text-zinc-300 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800/80">
+                  <span className="font-mono text-xs text-zinc-300 bg-zinc-900/90 px-2 py-0.5 rounded-md border border-zinc-800">
                     {asset.count} {asset.count === 1 ? 'transfer' : 'transfers'}
                   </span>
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => toggleDetail(asset.id)}
-                    className="font-sans text-[11px] text-zinc-400 hover:text-zinc-200 px-2 py-0.5 rounded border border-zinc-800 bg-zinc-900/60 transition"
+                    className="font-sans text-[11px] h-6 px-2 text-zinc-400 hover:text-zinc-200"
                   >
                     {isDetailOpen ? 'Hide total' : 'View total'}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
               {/* Expandable Aggregate Volume Detail with BigInt precision */}
               {isDetailOpen && (
-                <div className="mt-2.5 pt-2 border-t border-zinc-900 flex flex-col gap-1 text-xs min-w-0 font-sans">
+                <div className="mt-2.5 pt-2.5 border-t border-zinc-900 flex flex-col gap-1 text-xs min-w-0 font-sans">
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="text-zinc-400 font-medium shrink-0">
                       Total amount across transfers:
@@ -205,7 +210,7 @@ export function MovingAssetsSummary({ data }: MovingAssetsSummaryProps) {
 
         {/* Compact Toggle: Show all assets vs Show first 5 */}
         {hasMore && (
-          <div className="p-2.5 text-center bg-zinc-950/80">
+          <div className="p-2.5 text-center bg-zinc-950/90 border-t border-zinc-850">
             <button
               type="button"
               onClick={() => setIsExpanded(!isExpanded)}
@@ -216,7 +221,11 @@ export function MovingAssetsSummary({ data }: MovingAssetsSummaryProps) {
                   ? 'Show first 5'
                   : `Show all ${assets.length} assets`}
               </span>
-              <span className="font-mono text-[10px]">{isExpanded ? '▲' : '▼'}</span>
+              {isExpanded ? (
+                <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+              )}
             </button>
           </div>
         )}
