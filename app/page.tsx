@@ -31,7 +31,6 @@ export default function HomePage() {
   // Fetch session search history
   const fetchHistory = useCallback(async () => {
     try {
-      setIsHistoryLoading(true);
       const res = await apiClient.getHistory(20);
       setHistory(res.data);
     } catch {
@@ -92,7 +91,21 @@ export default function HomePage() {
 
   // Initial mount: load history and check URL params for deep-linked lookups
   useEffect(() => {
-    void fetchHistory();
+    let ignore = false;
+
+    apiClient
+      .getHistory(20)
+      .then((res) => {
+        if (!ignore) {
+          setHistory(res.data);
+          setIsHistoryLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setIsHistoryLoading(false);
+        }
+      });
 
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -100,10 +113,39 @@ export default function HomePage() {
       const txParam = params.get('tx') || params.get('hash');
 
       if (chainParam && isValidChain(chainParam) && txParam && isValidTransactionHash(txParam)) {
-        void executeLookup(chainParam as SupportedChain, txParam);
+        const chain = chainParam as SupportedChain;
+        const hash = txParam;
+        const searchId = ++latestSearchIdRef.current;
+
+        apiClient
+          .lookupTransaction({ chain, transactionHash: hash })
+          .then((response) => {
+            if (!ignore && searchId === latestSearchIdRef.current) {
+              setSelectedChain(chain);
+              setTransactionHash(hash);
+              setResult(response);
+              setIsFormCondensed(true);
+              setError(null);
+              setIsLoading(false);
+              void fetchHistory();
+            }
+          })
+          .catch((err: unknown) => {
+            if (!ignore && searchId === latestSearchIdRef.current) {
+              setSelectedChain(chain);
+              setTransactionHash(hash);
+              setError(err instanceof Error ? err : new Error(String(err)));
+              setIsLoading(false);
+              void fetchHistory();
+            }
+          });
       }
     }
-  }, [executeLookup, fetchHistory]);
+
+    return () => {
+      ignore = true;
+    };
+  }, [apiClient, fetchHistory]);
 
   return (
     <main className="relative min-h-screen bg-zinc-950 text-zinc-100 antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
@@ -125,7 +167,8 @@ export default function HomePage() {
               Transaction Story Explorer
             </h1>
             <p className="mt-2 max-w-lg text-sm text-zinc-400 leading-relaxed font-sans">
-              Investigate transaction intent, token movements, and approval allowances across EVM chains with verified on-chain decoding.
+              Investigate transaction intent, token movements, and approval allowances across EVM
+              chains with verified on-chain decoding.
             </p>
           </header>
         )}
@@ -133,6 +176,7 @@ export default function HomePage() {
         {/* Search Form */}
         <section aria-label="Transaction Search">
           <TransactionSearchForm
+            key={`${selectedChain}:${transactionHash}`}
             initialChain={selectedChain}
             initialHash={transactionHash}
             isLoading={isLoading}

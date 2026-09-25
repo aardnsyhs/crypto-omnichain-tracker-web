@@ -31,15 +31,6 @@ export function TransactionSearchForm({
   const [clientError, setClientError] = useState<string | null>(null);
   const [pastedFeedback, setPastedFeedback] = useState(false);
 
-  // Sync state if props change (e.g. from clicking search history)
-  React.useEffect(() => {
-    if (initialChain) setChain(initialChain);
-  }, [initialChain]);
-
-  React.useEffect(() => {
-    if (initialHash) setHash(initialHash);
-  }, [initialHash]);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setClientError(null);

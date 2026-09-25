@@ -13,10 +13,7 @@ interface ApprovalDetailsProps {
   isHeroDisplayingApproval?: boolean;
 }
 
-export function ApprovalDetails({
-  approvals,
-  isFailed,
-}: ApprovalDetailsProps) {
+export function ApprovalDetails({ approvals, isFailed }: ApprovalDetailsProps) {
   if (!approvals || approvals.length === 0 || isFailed) {
     return null;
   }
@@ -53,12 +50,12 @@ export function ApprovalDetails({
                     Approval #{idx + 1}
                   </Badge>
                   <span className="font-sans text-sm font-bold text-zinc-100 truncate min-w-0">
-                    {item.name ? `${item.name} (${item.symbol || '???'})` : item.symbol || 'ERC-20 Token'}
+                    {item.name
+                      ? `${item.name} (${item.symbol || '???'})`
+                      : item.symbol || 'ERC-20 Token'}
                   </span>
                   {item.logIndex !== undefined && (
-                    <span className="font-mono text-xs text-zinc-500">
-                      (Log #{item.logIndex})
-                    </span>
+                    <span className="font-mono text-xs text-zinc-500">(Log #{item.logIndex})</span>
                   )}
                 </div>
 
@@ -73,7 +70,10 @@ export function ApprovalDetails({
                     </Badge>
                   ) : (
                     <div className="flex items-center justify-end gap-1.5">
-                      <span className="font-mono text-xs sm:text-sm font-bold text-zinc-100" title={val.exact}>
+                      <span
+                        className="font-mono text-xs sm:text-sm font-bold text-zinc-100"
+                        title={val.exact}
+                      >
                         {item.formattedAmount !== null
                           ? `${val.display} ${item.symbol || ''}`
                           : `${item.rawAmount} raw units`}
@@ -129,13 +129,20 @@ export function ApprovalDetails({
               {/* Token Contract Reference & Log Proof */}
               <div className="pt-2 border-t border-zinc-850/60 flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-400 min-w-0">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="text-[11px] font-sans text-zinc-500 shrink-0">Token contract:</span>
-                  <span className="font-mono text-zinc-400 text-xs truncate min-w-0 select-all" title={item.tokenAddress}>
+                  <span className="text-[11px] font-sans text-zinc-500 shrink-0">
+                    Token contract:
+                  </span>
+                  <span
+                    className="font-mono text-zinc-400 text-xs truncate min-w-0 select-all"
+                    title={item.tokenAddress}
+                  >
                     {truncateHashOrAddress(item.tokenAddress, 6, 4)}
                   </span>
                   <CopyButton text={item.tokenAddress} label="token contract address" iconOnly />
                   {item.decimals !== null && (
-                    <span className="text-zinc-600 font-mono text-[11px] hidden xs:inline">• {item.decimals} decimals</span>
+                    <span className="text-zinc-600 font-mono text-[11px] hidden xs:inline">
+                      • {item.decimals} decimals
+                    </span>
                   )}
                 </div>
 

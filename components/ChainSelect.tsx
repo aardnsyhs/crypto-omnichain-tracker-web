@@ -70,7 +70,9 @@ export function ChainSelect({ value, onChange, disabled = false }: ChainSelectPr
               <span
                 className={cn(
                   'h-1.5 w-1.5 rounded-full shrink-0 transition-colors',
-                  isSelected ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' : 'bg-zinc-600',
+                  isSelected
+                    ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]'
+                    : 'bg-zinc-600',
                 )}
               />
               <IconComponent
@@ -82,7 +84,9 @@ export function ChainSelect({ value, onChange, disabled = false }: ChainSelectPr
               />
               <span className="hidden sm:inline font-sans truncate">{chain.name}</span>
               <span className="sm:hidden font-mono font-semibold truncate">{chain.symbol}</span>
-              <span className="hidden sm:inline font-mono text-[10px] text-zinc-500">{chain.symbol}</span>
+              <span className="hidden sm:inline font-mono text-[10px] text-zinc-500">
+                {chain.symbol}
+              </span>
             </button>
           );
         })}

@@ -90,7 +90,9 @@ export function TechnicalDetails({ data, meta }: TechnicalDetailsProps) {
                 <span>{coverageInfo.badge}</span>
               </Badge>
             </div>
-            <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">{coverageInfo.desc}</p>
+            <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
+              {coverageInfo.desc}
+            </p>
 
             {data.coverageReasons && data.coverageReasons.length > 0 && (
               <div className="mt-3 border-t border-zinc-850 pt-2.5">
@@ -118,7 +120,9 @@ export function TechnicalDetails({ data, meta }: TechnicalDetailsProps) {
               </span>
               <CopyButton text={data.transactionHash} label="transaction hash" />
             </div>
-            <p className="break-all text-zinc-200 select-all font-mono text-xs">{data.transactionHash}</p>
+            <p className="break-all text-zinc-200 select-all font-mono text-xs">
+              {data.transactionHash}
+            </p>
           </div>
 
           {/* Technical Ledger Grid */}
@@ -157,7 +161,9 @@ export function TechnicalDetails({ data, meta }: TechnicalDetailsProps) {
               <span className="text-[11px] uppercase text-zinc-400 block font-semibold font-sans">
                 Block Height & Timestamp
               </span>
-              <span className="text-zinc-200 font-bold font-mono mt-1 block">#{data.blockNumber}</span>
+              <span className="text-zinc-200 font-bold font-mono mt-1 block">
+                #{data.blockNumber}
+              </span>
               <span className="text-[11px] text-zinc-400 mt-1 block font-sans">
                 {data.timestamp ? formatTimestamp(data.timestamp) : 'Just now'}
               </span>
@@ -184,7 +190,9 @@ export function TechnicalDetails({ data, meta }: TechnicalDetailsProps) {
                 <span className="font-mono truncate min-w-0" title={meta.requestId}>
                   Request ID: {meta.requestId ? `${meta.requestId.slice(0, 12)}...` : 'n/a'}
                 </span>
-                {meta.requestId && <CopyButton text={meta.requestId} label="request id" className="shrink-0" />}
+                {meta.requestId && (
+                  <CopyButton text={meta.requestId} label="request id" className="shrink-0" />
+                )}
               </div>
             </div>
           </div>

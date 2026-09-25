@@ -138,7 +138,8 @@ export function TransactionSummary({ data }: TransactionSummaryProps) {
             Transaction Execution Failed (Reverted)
           </h2>
           <p className="mt-1 text-sm text-zinc-400 font-sans">
-            Transaction execution failed. Execution changes were reverted, but the network fee was still paid.
+            Transaction execution failed. Execution changes were reverted, but the network fee was
+            still paid.
           </p>
         </div>
       );
@@ -157,7 +158,9 @@ export function TransactionSummary({ data }: TransactionSummaryProps) {
               Token Approval
             </span>
             <span className="text-xs text-zinc-500">•</span>
-            <span className="font-sans text-xs text-zinc-300 font-medium">{a.name || a.symbol}</span>
+            <span className="font-sans text-xs text-zinc-300 font-medium">
+              {a.name || a.symbol}
+            </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-100 font-sans">
             {isUnlimited
@@ -209,7 +212,9 @@ export function TransactionSummary({ data }: TransactionSummaryProps) {
           </div>
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-100 font-sans">
             {totalTransfers} Asset {totalTransfers === 1 ? 'Movement' : 'Movements'}
-            {approvals.length > 0 ? ` & ${approvals.length} Token ${approvals.length === 1 ? 'Approval' : 'Approvals'}` : ''}
+            {approvals.length > 0
+              ? ` & ${approvals.length} Token ${approvals.length === 1 ? 'Approval' : 'Approvals'}`
+              : ''}
           </h2>
         </div>
       );
@@ -237,9 +242,7 @@ export function TransactionSummary({ data }: TransactionSummaryProps) {
             {getChainLabel()}
           </Badge>
           <span className="text-zinc-600 hidden xs:inline">•</span>
-          <span className="font-mono text-xs text-zinc-400">
-            Block #{data.blockNumber}
-          </span>
+          <span className="font-mono text-xs text-zinc-400">Block #{data.blockNumber}</span>
           {data.timestamp && (
             <>
               <span className="text-zinc-600 hidden sm:inline">•</span>
@@ -272,9 +275,7 @@ export function TransactionSummary({ data }: TransactionSummaryProps) {
       </div>
 
       {/* 2. Executive Impact Header (Single-Sheet typography, no nested card) */}
-      <div className="pt-4 pb-2 min-w-0">
-        {renderTitle()}
-      </div>
+      <div className="pt-4 pb-2 min-w-0">{renderTitle()}</div>
 
       {/* 3. Essential Forensic Metadata Row: From, To, and Network fee paid (strictly ONCE) */}
       <div className="mt-3 flex flex-wrap items-center gap-y-2 gap-x-4 rounded-lg bg-zinc-950/80 border border-zinc-800/80 p-3 text-xs min-w-0">
@@ -298,7 +299,9 @@ export function TransactionSummary({ data }: TransactionSummaryProps) {
           >
             {data.to ? truncateHashOrAddress(data.to, 6, 4) : 'Contract Deployment'}
           </span>
-          {data.to && <CopyButton text={data.to} label="target address" iconOnly className="shrink-0" />}
+          {data.to && (
+            <CopyButton text={data.to} label="target address" iconOnly className="shrink-0" />
+          )}
         </div>
 
         <span className="text-zinc-700 hidden sm:inline">|</span>
@@ -308,7 +311,9 @@ export function TransactionSummary({ data }: TransactionSummaryProps) {
           <span className="font-sans text-zinc-400 font-medium shrink-0">Network fee paid:</span>
           <span
             className="font-mono font-semibold text-zinc-200"
-            title={feeFormatted.exact ? `${feeFormatted.exact} ${data.fee?.symbol || ''}` : undefined}
+            title={
+              feeFormatted.exact ? `${feeFormatted.exact} ${data.fee?.symbol || ''}` : undefined
+            }
           >
             {feeFormatted.display} {data.fee?.symbol || ''}
           </span>
@@ -327,7 +332,8 @@ export function TransactionSummary({ data }: TransactionSummaryProps) {
         <div className="mt-3 flex items-start gap-2.5 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-xs font-sans text-amber-200">
           <Info className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
           <span>
-            Note: Some internal contract actions or custom events require archive trace data and are not decoded by standard EVM schemas.
+            Note: Some internal contract actions or custom events require archive trace data and are
+            not decoded by standard EVM schemas.
           </span>
         </div>
       )}

@@ -29,7 +29,8 @@ export function LookupErrorState({ error, onRetry }: LookupErrorStateProps) {
   let description =
     error.message || 'An unexpected error occurred while looking up this transaction.';
   let badgeText = 'Error';
-  let badgeVariant: 'default' | 'secondary' | 'outline' | 'success' | 'warning' | 'destructive' | 'accent' =
+  let badgeVariant:
+    'default' | 'secondary' | 'outline' | 'success' | 'warning' | 'destructive' | 'accent' =
     'destructive';
   let IconComponent = AlertTriangle;
   let hint: string | null = null;

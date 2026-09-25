@@ -158,7 +158,10 @@ export function SearchHistoryList({ history, isLoading, onSelect }: SearchHistor
                 </div>
 
                 <div className="flex items-center justify-between gap-3 sm:justify-end min-w-0">
-                  <span className="font-mono text-[11px] text-zinc-500 truncate" title={item.searchedAt}>
+                  <span
+                    className="font-mono text-[11px] text-zinc-500 truncate"
+                    title={item.searchedAt}
+                  >
                     {formatTimestamp(item.searchedAt)}
                   </span>
                   <Button

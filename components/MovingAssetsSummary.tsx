@@ -3,7 +3,11 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import type { TransactionData, TokenTransferItem } from '../lib/api-types';
-import { formatReadableAmount, formatUnitsToExactDecimal, truncateHashOrAddress } from '../lib/validation';
+import {
+  formatReadableAmount,
+  formatUnitsToExactDecimal,
+  truncateHashOrAddress,
+} from '../lib/validation';
 import { CopyButton } from './CopyButton';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -75,8 +79,7 @@ export function MovingAssetsSummary({ data }: MovingAssetsSummaryProps) {
     const existing = assetMap.get(key);
 
     const tokenSymbol =
-      tx.symbol ||
-      (tx.tokenAddress ? truncateHashOrAddress(tx.tokenAddress, 6, 4) : 'Token');
+      tx.symbol || (tx.tokenAddress ? truncateHashOrAddress(tx.tokenAddress, 6, 4) : 'Token');
     const tokenName =
       tx.name ||
       tx.symbol ||
@@ -151,7 +154,10 @@ export function MovingAssetsSummary({ data }: MovingAssetsSummaryProps) {
           const isDetailOpen = openDetailId === asset.id;
 
           return (
-            <div key={asset.id} className="p-3.5 sm:px-4 transition-colors hover:bg-zinc-900/40 min-w-0">
+            <div
+              key={asset.id}
+              className="p-3.5 sm:px-4 transition-colors hover:bg-zinc-900/40 min-w-0"
+            >
               <div className="flex flex-wrap items-center justify-between gap-2 min-w-0">
                 {/* Left: Token Symbol & Name */}
                 <div className="flex items-center gap-2 min-w-0">
@@ -192,15 +198,24 @@ export function MovingAssetsSummary({ data }: MovingAssetsSummaryProps) {
                     <span className="text-zinc-400 font-medium shrink-0">
                       Total amount across transfers:
                     </span>
-                    <span className="font-mono font-semibold text-zinc-100 truncate" title={asset.exactVolume}>
+                    <span
+                      className="font-mono font-semibold text-zinc-100 truncate"
+                      title={asset.exactVolume}
+                    >
                       {asset.hasKnownDecimals
                         ? `${asset.displayVolume} ${asset.symbol}`
                         : `${asset.exactVolume} (Raw amount, decimals unavailable)`}
                     </span>
-                    <CopyButton text={asset.exactVolume} label={`total ${asset.symbol} amount`} iconOnly className="shrink-0" />
+                    <CopyButton
+                      text={asset.exactVolume}
+                      label={`total ${asset.symbol} amount`}
+                      iconOnly
+                      className="shrink-0"
+                    />
                   </div>
                   <p className="text-[11px] text-zinc-500 leading-normal">
-                    Note: Assets transferred through multiple intermediaries may be counted more than once.
+                    Note: Assets transferred through multiple intermediaries may be counted more
+                    than once.
                   </p>
                 </div>
               )}
@@ -216,11 +231,7 @@ export function MovingAssetsSummary({ data }: MovingAssetsSummaryProps) {
               onClick={() => setIsExpanded(!isExpanded)}
               className="inline-flex items-center gap-1.5 font-sans text-xs font-medium text-zinc-400 hover:text-zinc-200 transition focus:outline-none"
             >
-              <span>
-                {isExpanded
-                  ? 'Show first 5'
-                  : `Show all ${assets.length} assets`}
-              </span>
+              <span>{isExpanded ? 'Show first 5' : `Show all ${assets.length} assets`}</span>
               {isExpanded ? (
                 <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
               ) : (

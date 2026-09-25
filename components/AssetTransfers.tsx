@@ -156,11 +156,17 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
                         >
                           {isNative ? 'Native' : 'ERC-20'}
                         </Badge>
-                        <span className="font-sans font-semibold text-zinc-100 truncate" title={item.name || item.symbol}>
+                        <span
+                          className="font-sans font-semibold text-zinc-100 truncate"
+                          title={item.name || item.symbol}
+                        >
                           {item.symbol}
                         </span>
                         {item.name && item.name !== item.symbol && (
-                          <span className="text-[11px] text-zinc-500 font-sans truncate hidden lg:inline" title={item.name}>
+                          <span
+                            className="text-[11px] text-zinc-500 font-sans truncate hidden lg:inline"
+                            title={item.name}
+                          >
                             ({item.name})
                           </span>
                         )}
@@ -219,7 +225,9 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
                         >
                           {item.to ? truncateHashOrAddress(item.to, 6, 4) : 'Contract Deployment'}
                         </span>
-                        {item.to && <CopyButton text={item.to} label="recipient address" iconOnly />}
+                        {item.to && (
+                          <CopyButton text={item.to} label="recipient address" iconOnly />
+                        )}
                       </div>
                     </td>
 
@@ -246,10 +254,17 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
                             {!isNative && item.tokenAddress && (
                               <div className="flex items-center gap-1.5 min-w-0">
                                 <span className="text-zinc-500 font-medium">Token contract:</span>
-                                <span className="font-mono text-zinc-300 select-all" title={item.tokenAddress}>
+                                <span
+                                  className="font-mono text-zinc-300 select-all"
+                                  title={item.tokenAddress}
+                                >
                                   {item.tokenAddress}
                                 </span>
-                                <CopyButton text={item.tokenAddress} label="token contract address" iconOnly />
+                                <CopyButton
+                                  text={item.tokenAddress}
+                                  label="token contract address"
+                                  iconOnly
+                                />
                               </div>
                             )}
 
@@ -263,7 +278,10 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
 
                           <div className="flex items-center gap-1.5">
                             <span className="text-zinc-500 font-medium">Exact amount:</span>
-                            <span className="font-mono font-semibold text-zinc-200 select-all" title={item.formattedAmount !== null ? val.exact : item.rawAmount}>
+                            <span
+                              className="font-mono font-semibold text-zinc-200 select-all"
+                              title={item.formattedAmount !== null ? val.exact : item.rawAmount}
+                            >
                               {item.formattedAmount !== null
                                 ? `${val.exact} ${item.symbol}`
                                 : `${item.rawAmount} (Raw amount, decimals unavailable)`}
@@ -294,11 +312,7 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
               onClick={() => setIsExpanded(!isExpanded)}
               className="gap-2 font-sans text-xs font-semibold"
             >
-              <span>
-                {isExpanded
-                  ? 'Show first 5'
-                  : `Show all ${totalMovements} transfers`}
-              </span>
+              <span>{isExpanded ? 'Show first 5' : `Show all ${totalMovements} transfers`}</span>
               {isExpanded ? (
                 <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
               ) : (
@@ -333,7 +347,10 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
                   >
                     {isNative ? 'Native' : 'ERC-20'}
                   </Badge>
-                  <span className="font-sans font-bold text-sm text-zinc-100 truncate min-w-0" title={item.name || item.symbol}>
+                  <span
+                    className="font-sans font-bold text-sm text-zinc-100 truncate min-w-0"
+                    title={item.name || item.symbol}
+                  >
                     {item.symbol}
                   </span>
                 </div>
@@ -357,7 +374,10 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
                 <div className="flex items-center justify-between gap-1.5 min-w-0">
                   <span className="text-zinc-500 font-medium shrink-0">From:</span>
                   <div className="flex items-center gap-1 min-w-0">
-                    <span className="font-mono text-zinc-300 text-xs truncate min-w-0" title={item.from}>
+                    <span
+                      className="font-mono text-zinc-300 text-xs truncate min-w-0"
+                      title={item.from}
+                    >
                       {truncateHashOrAddress(item.from, 6, 4)}
                     </span>
                     <CopyButton text={item.from} label="sender address" iconOnly />
@@ -410,10 +430,17 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
                     <div className="flex items-center justify-between gap-2 min-w-0">
                       <span className="text-zinc-500 shrink-0 font-medium">Token contract:</span>
                       <div className="flex items-center gap-1 min-w-0">
-                        <span className="font-mono text-zinc-300 text-[11px] truncate" title={item.tokenAddress}>
+                        <span
+                          className="font-mono text-zinc-300 text-[11px] truncate"
+                          title={item.tokenAddress}
+                        >
                           {truncateHashOrAddress(item.tokenAddress, 6, 4)}
                         </span>
-                        <CopyButton text={item.tokenAddress} label="token contract address" iconOnly />
+                        <CopyButton
+                          text={item.tokenAddress}
+                          label="token contract address"
+                          iconOnly
+                        />
                       </div>
                     </div>
                   )}
@@ -428,7 +455,10 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
                   <div className="flex items-center justify-between gap-2 pt-1 border-t border-zinc-800">
                     <span className="text-zinc-500 font-medium">Exact amount:</span>
                     <div className="flex items-center gap-1 min-w-0">
-                      <span className="font-mono text-xs text-zinc-200 select-all truncate" title={item.formattedAmount !== null ? val.exact : item.rawAmount}>
+                      <span
+                        className="font-mono text-xs text-zinc-200 select-all truncate"
+                        title={item.formattedAmount !== null ? val.exact : item.rawAmount}
+                      >
                         {item.formattedAmount !== null
                           ? `${val.exact} ${item.symbol}`
                           : `${item.rawAmount} (Raw amount, decimals unavailable)`}
@@ -456,11 +486,7 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
               onClick={() => setIsExpanded(!isExpanded)}
               className="gap-2 font-sans text-xs font-semibold w-full"
             >
-              <span>
-                {isExpanded
-                  ? 'Show first 5'
-                  : `Show all ${totalMovements} transfers`}
-              </span>
+              <span>{isExpanded ? 'Show first 5' : `Show all ${totalMovements} transfers`}</span>
               {isExpanded ? (
                 <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
               ) : (
