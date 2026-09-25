@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, ArrowRight, Clipboard, X, Check, Loader2 } from 'lucide-react';
+import { Search, ArrowRight, Clipboard, X, Check, Loader2, Hash, AlertCircle } from 'lucide-react';
 import type { SupportedChain } from '../lib/api-types';
 import { SUPPORTED_CHAINS, truncateHashOrAddress, validateLookupInput } from '../lib/validation';
 import { ChainSelect } from './ChainSelect';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
+import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 import { cn } from '../lib/utils';
 
 interface TransactionSearchFormProps {
@@ -67,14 +68,32 @@ export function TransactionSearchForm({
 
   if (isCondensed && hash) {
     const chainConfig = SUPPORTED_CHAINS.find((c) => c.id === chain) || SUPPORTED_CHAINS[0];
+    const chainBadgeClasses =
+      chain === 'ethereum'
+        ? 'border-sky-500/40 bg-sky-950/30 text-sky-200'
+        : chain === 'bsc'
+          ? 'border-amber-500/40 bg-amber-950/30 text-amber-200'
+          : 'border-violet-500/40 bg-violet-950/30 text-violet-200';
+    const chainDotClass =
+      chain === 'ethereum'
+        ? 'bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.7)]'
+        : chain === 'bsc'
+          ? 'bg-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.7)]'
+          : 'bg-violet-400 shadow-[0_0_6px_rgba(167,139,250,0.7)]';
+
     return (
-      <Card className="flex flex-wrap items-center justify-between gap-3 p-3.5 shadow-lg border-zinc-800/90 sm:px-5">
+      <Card className="flex flex-wrap items-center justify-between gap-3 p-3.5 sm:px-5 border-border/80 bg-card/95 backdrop-blur-sm shadow-md">
         <div className="flex items-center gap-2.5 min-w-0">
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-zinc-700/60 bg-zinc-950 px-2.5 py-1 font-mono text-xs text-zinc-200">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          <span
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-xs font-medium',
+              chainBadgeClasses,
+            )}
+          >
+            <span className={cn('h-1.5 w-1.5 rounded-full', chainDotClass)} />
             <span>{chainConfig.name}</span>
           </span>
-          <span className="truncate font-mono text-xs text-zinc-400 select-all" title={hash}>
+          <span className="truncate font-mono text-xs text-foreground/90 select-all" title={hash}>
             {truncateHashOrAddress(hash, 12, 10)}
           </span>
         </div>
@@ -84,9 +103,9 @@ export function TransactionSearchForm({
           variant="secondary"
           size="sm"
           onClick={() => onToggleCondensed?.(false)}
-          className="gap-1.5"
+          className="gap-1.5 text-xs font-sans"
         >
-          <Search className="h-3.5 w-3.5 text-zinc-400" />
+          <Search className="h-3.5 w-3.5 text-muted-foreground" />
           <span>New search</span>
         </Button>
       </Card>
@@ -94,53 +113,66 @@ export function TransactionSearchForm({
   }
 
   return (
-    <Card className="p-5 sm:p-6 shadow-xl border-zinc-800/90">
+    <Card className="p-5 sm:p-6 border-border/80 bg-card/95 backdrop-blur-sm shadow-xl">
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         {/* Network Selector */}
         <ChainSelect value={chain} onChange={setChain} disabled={isLoading} />
 
-        {/* Command Bar Input */}
+        {/* Transaction Hash Command Input */}
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
             <label
               htmlFor="tx-hash-input"
-              className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-semibold"
+              className="flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-muted-foreground font-semibold"
             >
-              Transaction Hash
+              <Hash className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+              <span>Transaction Hash</span>
             </label>
-            <div className="flex items-center gap-3">
+
+            <div className="flex items-center gap-2">
               {hash && (
-                <button
-                  type="button"
-                  onClick={handleClear}
-                  disabled={isLoading}
-                  className="inline-flex items-center gap-1 font-mono text-xs text-zinc-500 transition hover:text-zinc-300 disabled:opacity-50"
-                >
-                  <X className="h-3 w-3" />
-                  <span>clear</span>
-                </button>
+                <Tooltip>
+                  <TooltipTrigger
+                    type="button"
+                    onClick={handleClear}
+                    disabled={isLoading}
+                    className="inline-flex items-center gap-1 font-mono text-xs text-muted-foreground transition hover:text-foreground disabled:opacity-40"
+                    aria-label="Clear hash input"
+                  >
+                    <X className="h-3 w-3" />
+                    <span>clear</span>
+                  </TooltipTrigger>
+                  <TooltipContent>Clear input</TooltipContent>
+                </Tooltip>
               )}
-              <button
-                type="button"
-                onClick={handlePaste}
-                disabled={isLoading}
-                className={cn(
-                  'inline-flex items-center gap-1 font-mono text-xs transition-colors disabled:opacity-50',
-                  pastedFeedback ? 'text-emerald-400' : 'text-zinc-400 hover:text-zinc-200',
-                )}
-              >
-                {pastedFeedback ? (
-                  <>
-                    <Check className="h-3 w-3" />
-                    <span>pasted</span>
-                  </>
-                ) : (
-                  <>
-                    <Clipboard className="h-3 w-3" />
-                    <span>paste</span>
-                  </>
-                )}
-              </button>
+
+              <Tooltip>
+                <TooltipTrigger
+                  type="button"
+                  onClick={handlePaste}
+                  disabled={isLoading}
+                  className={cn(
+                    'inline-flex items-center gap-1 font-mono text-xs transition-colors disabled:opacity-40',
+                    pastedFeedback
+                      ? 'text-emerald-400'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                  aria-label="Paste hash from clipboard"
+                >
+                  {pastedFeedback ? (
+                    <>
+                      <Check className="h-3 w-3" />
+                      <span>pasted</span>
+                    </>
+                  ) : (
+                    <>
+                      <Clipboard className="h-3 w-3" />
+                      <span>paste</span>
+                    </>
+                  )}
+                </TooltipTrigger>
+                <TooltipContent>Paste from clipboard</TooltipContent>
+              </Tooltip>
             </div>
           </div>
 
@@ -158,10 +190,10 @@ export function TransactionSearchForm({
               spellCheck={false}
               autoComplete="off"
               className={cn(
-                'w-full rounded-lg border bg-zinc-950 px-4 py-3 font-mono text-sm text-zinc-100 placeholder-zinc-600 transition-all focus:outline-none focus:ring-1',
+                'w-full rounded-lg border bg-surface-nested px-4 py-3 font-mono text-sm text-foreground placeholder:text-muted-foreground/60 transition-all focus:outline-none focus:ring-2',
                 clientError
-                  ? 'border-rose-500/80 focus:border-rose-500 focus:ring-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.15)]'
-                  : 'border-zinc-800 focus:border-zinc-500 focus:ring-zinc-400 hover:border-zinc-700',
+                  ? 'border-destructive/80 focus:border-destructive focus:ring-destructive/30 shadow-[0_0_12px_rgba(244,63,94,0.15)]'
+                  : 'border-border/80 focus:border-primary focus:ring-ring/40 hover:border-border',
                 isLoading && 'cursor-not-allowed opacity-50',
               )}
             />
@@ -169,6 +201,7 @@ export function TransactionSearchForm({
 
           {clientError && (
             <p className="mt-1 flex items-center gap-1.5 text-xs text-rose-400 font-mono">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               <span>{clientError}</span>
             </p>
           )}
@@ -179,7 +212,12 @@ export function TransactionSearchForm({
           type="submit"
           disabled={isLoading || !hash.trim()}
           size="lg"
-          className="w-full gap-2 text-zinc-950"
+          className={cn(
+            'w-full gap-2 min-h-[44px] font-semibold text-sm transition-all duration-150',
+            hash.trim() && !isLoading
+              ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90 hover:shadow-lg active:scale-[0.99]'
+              : 'border border-primary/25 bg-primary/10 text-primary/60 opacity-100 shadow-none cursor-not-allowed',
+          )}
         >
           {isLoading ? (
             <>

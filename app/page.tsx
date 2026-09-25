@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { ShieldCheck } from 'lucide-react';
 import type { SupportedChain, TransactionLookupResponse, HistoryItem } from '../lib/api-types';
 import { ApiClientError } from '../lib/api-errors';
 import { createApiClient } from '../lib/api-client';
@@ -148,25 +149,35 @@ export default function HomePage() {
   }, [apiClient, fetchHistory]);
 
   return (
-    <main className="relative min-h-screen bg-zinc-950 text-zinc-100 antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
-      {/* Ambient background illumination (dose capped, subtle depth) */}
+    <main className="relative min-h-screen bg-background text-foreground antialiased selection:bg-emerald-500/25 selection:text-emerald-200">
+      {/* Ambient background depth */}
       <div
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(99,102,241,0.07),rgba(9,9,11,0))]"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_60%_40%_at_50%_-10%,rgba(16,185,129,0.06),transparent)]"
         aria-hidden="true"
       />
 
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
-        {/* Header: Quiet and hidden when active result is displayed */}
+        {/* Header: Compact forensic hero, hidden when an active result is displayed */}
         {!result && (
           <header className="flex flex-col items-center text-center pt-2 sm:pt-4">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/80 px-3 py-1 text-xs text-zinc-300 shadow-sm backdrop-blur-sm">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
-              <span className="font-sans font-medium">EVM On-Chain Investigative Ledger</span>
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-border/80 bg-surface-elevated/80 px-3.5 py-1 text-xs text-muted-foreground shadow-sm backdrop-blur-md">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]" />
+              </span>
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" aria-hidden="true" />
+              <span className="font-sans font-medium text-foreground">
+                EVM Investigative Ledger
+              </span>
+              <span className="h-3 w-px bg-border/80" />
+              <span className="font-mono text-[11px] text-muted-foreground">
+                Live data • 3 networks • Verified decoding
+              </span>
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-zinc-100 sm:text-4xl font-sans">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-foreground font-sans">
               Transaction Story Explorer
             </h1>
-            <p className="mt-2 max-w-lg text-sm text-zinc-400 leading-relaxed font-sans">
+            <p className="mt-2 max-w-lg text-xs sm:text-sm text-muted-foreground leading-relaxed font-sans">
               Investigate transaction intent, token movements, and approval allowances across EVM
               chains with verified on-chain decoding.
             </p>
@@ -223,8 +234,8 @@ export default function HomePage() {
           onSelect={(chain, hash) => void executeLookup(chain, hash)}
         />
 
-        {/* Footer: Quiet ledger audit text without technology marketing */}
-        <footer className="mt-8 border-t border-zinc-900/80 pt-6 text-center text-xs text-zinc-500 font-sans">
+        {/* Footer */}
+        <footer className="mt-8 border-t border-border/60 pt-6 text-center text-xs text-muted-foreground font-sans">
           <p>Omnichain Transaction Story Explorer • Multi-chain verified EVM ledger</p>
         </footer>
       </div>

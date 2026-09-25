@@ -25,7 +25,7 @@ export function TransactionResultCard({ response }: TransactionResultCardProps) 
   const isPureApproval = !hasTransfers && approvals.length === 1;
 
   return (
-    <article className="w-full overflow-hidden rounded-xl border border-zinc-800/90 bg-zinc-950/90 text-zinc-100 shadow-2xl backdrop-blur-sm divide-y divide-zinc-850/60">
+    <article className="w-full overflow-hidden rounded-xl border border-border/80 bg-card text-card-foreground shadow-2xl backdrop-blur-sm divide-y divide-border/60">
       {/* Tier 1: Primary Action & Executive Summary */}
       <TransactionSummary data={data} />
 
@@ -42,11 +42,11 @@ export function TransactionResultCard({ response }: TransactionResultCardProps) 
 
       {/* 4. Pure Contract Call (no transfers and no approvals) */}
       {!isFailed && !hasTransfers && !hasApprovals && (
-        <div className="border-b border-zinc-800/80 p-5 sm:p-6 text-center">
-          <p className="text-xs font-mono text-zinc-400">
+        <div className="p-5 sm:p-6 text-center bg-surface-nested/30">
+          <p className="text-xs font-mono text-muted-foreground">
             Smart contract interaction executed without token transfers or approval grants.
           </p>
-          <p className="mt-1 text-[11px] font-mono text-zinc-500">
+          <p className="mt-1 text-[11px] font-mono text-muted-foreground/80">
             Review calldata and execution logs in the technical details below.
           </p>
         </div>

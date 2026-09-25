@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, ArrowRightLeft } from 'lucide-react';
 import type { TransactionData, TokenTransferItem } from '../lib/api-types';
 import { formatReadableAmount, truncateHashOrAddress } from '../lib/validation';
 import { CopyButton } from './CopyButton';
@@ -74,11 +74,11 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
 
   if (totalMovements === 0) {
     return (
-      <div className="border-b border-zinc-800/60 p-5 sm:p-6 text-center">
-        <p className="font-sans text-xs text-zinc-400">
+      <div className="p-5 sm:p-6 text-center bg-surface-nested/30">
+        <p className="font-sans text-xs text-muted-foreground">
           No standard ERC-20 token transfers detected within decoder coverage.
         </p>
-        <p className="mt-1 font-sans text-xs text-zinc-500">
+        <p className="mt-1 font-sans text-xs text-muted-foreground/80">
           Internal contract state changes require archive trace data.
         </p>
       </div>
@@ -104,15 +104,16 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
     <section aria-label="Asset transfers" className="p-5 sm:p-6 min-w-0">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2 min-w-0">
         <div className="flex items-center gap-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 font-sans">
+          <ArrowRightLeft className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-sans">
             Asset transfers
           </h3>
-          <Badge variant="outline" className="font-mono text-[11px] text-zinc-300">
+          <Badge variant="outline" className="font-mono text-[11px]">
             {totalMovements} {totalMovements === 1 ? 'transfer' : 'transfers'}
           </Badge>
         </div>
         {hasMore && (
-          <span className="font-sans text-xs text-zinc-500">
+          <span className="font-sans text-xs text-muted-foreground">
             {isExpanded
               ? `Showing all ${totalMovements} transfers`
               : `Showing 1 to ${DEFAULT_LIMIT} of ${totalMovements} transfers`}
@@ -121,10 +122,10 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
       </div>
 
       {/* 1. DESKTOP VIEW: Aligned 6-Column Ledger Table (hidden on mobile, visible on md+) */}
-      <div className="hidden md:block rounded-xl border border-zinc-800/80 bg-zinc-950/80 overflow-hidden min-w-0 shadow-sm">
+      <div className="hidden md:block rounded-xl border border-border/80 bg-surface-nested overflow-hidden min-w-0 shadow-inner">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="border-b border-zinc-800/80 bg-zinc-900/60 font-sans text-zinc-400 font-semibold">
+            <tr className="border-b border-border/80 bg-surface-elevated/70 font-sans text-muted-foreground font-semibold">
               <th className="py-2.5 px-3.5 w-12 text-center">#</th>
               <th className="py-2.5 px-3 min-w-[140px]">Asset</th>
               <th className="py-2.5 px-3 text-right min-w-[150px]">Amount</th>
@@ -133,7 +134,7 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
               <th className="py-2.5 px-3 text-center w-20">Details</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-850/60">
+          <tbody className="divide-y divide-border/40">
             {visibleMovements.map((item) => {
               const val = formatReadableAmount(item.formattedAmount);
               const isNative = item.type === 'native';
@@ -141,9 +142,9 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
 
               return (
                 <React.Fragment key={item.id}>
-                  <tr className="transition-colors hover:bg-zinc-850/30">
+                  <tr className="transition-colors hover:bg-surface-elevated/40">
                     {/* 1. Index */}
-                    <td className="py-3 px-3.5 text-center font-mono text-xs font-semibold text-zinc-500">
+                    <td className="py-3 px-3.5 text-center font-mono text-xs font-semibold text-muted-foreground">
                       #{item.index}
                     </td>
 
@@ -157,14 +158,14 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
                           {isNative ? 'Native' : 'ERC-20'}
                         </Badge>
                         <span
-                          className="font-sans font-semibold text-zinc-100 truncate"
+                          className="font-sans font-semibold text-foreground truncate"
                           title={item.name || item.symbol}
                         >
                           {item.symbol}
                         </span>
                         {item.name && item.name !== item.symbol && (
                           <span
-                            className="text-[11px] text-zinc-500 font-sans truncate hidden lg:inline"
+                            className="text-[11px] text-muted-foreground font-sans truncate hidden lg:inline"
                             title={item.name}
                           >
                             ({item.name})
@@ -177,12 +178,12 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
                     <td className="py-3 px-3 text-right min-w-0">
                       <div className="flex items-center justify-end gap-1.5">
                         <span
-                          className="font-mono text-xs sm:text-sm font-bold text-zinc-100 truncate"
+                          className="font-mono text-xs sm:text-sm font-bold text-foreground truncate"
                           title={item.formattedAmount !== null ? val.exact : item.rawAmount}
                         >
                           {item.formattedAmount !== null
                             ? `${val.display} ${item.symbol}`
-                            : `${item.rawAmount} (Raw amount, decimals unavailable)`}
+                            : `${item.rawAmount} (Raw amount)`}
                         </span>
                         {val.isApproximate && item.formattedAmount !== null && (
                           <CopyButton
@@ -207,7 +208,7 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
                     <td className="py-3 px-3 min-w-0">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <span
-                          className="font-mono text-zinc-300 font-medium select-all"
+                          className="font-mono text-foreground/90 font-medium select-all"
                           title={item.from}
                         >
                           {truncateHashOrAddress(item.from, 6, 4)}
@@ -220,7 +221,7 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
                     <td className="py-3 px-3 min-w-0">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <span
-                          className="font-mono text-zinc-300 font-medium select-all"
+                          className="font-mono text-foreground/90 font-medium select-all"
                           title={item.to || 'Contract Deployment'}
                         >
                           {item.to ? truncateHashOrAddress(item.to, 6, 4) : 'Contract Deployment'}
@@ -238,7 +239,7 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
                         variant="outline"
                         size="sm"
                         onClick={() => toggleRowDetail(item.id)}
-                        className="font-sans text-[11px] h-6 px-2 text-zinc-400 hover:text-zinc-200"
+                        className="font-sans text-[11px] h-6 px-2 text-muted-foreground hover:text-foreground"
                       >
                         {isRowOpen ? 'Hide' : 'Details'}
                       </Button>
@@ -247,15 +248,20 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
 
                   {/* Expanded Sub-row with technical proofs */}
                   {isRowOpen && (
-                    <tr className="bg-zinc-950/90 border-b border-zinc-800/80">
-                      <td colSpan={6} className="py-2.5 px-4 text-xs font-sans text-zinc-400">
+                    <tr className="bg-surface-elevated/60 border-b border-border/60">
+                      <td
+                        colSpan={6}
+                        className="py-2.5 px-4 text-xs font-sans text-muted-foreground"
+                      >
                         <div className="flex flex-wrap items-center justify-between gap-3 min-w-0">
                           <div className="flex flex-wrap items-center gap-4 min-w-0">
                             {!isNative && item.tokenAddress && (
                               <div className="flex items-center gap-1.5 min-w-0">
-                                <span className="text-zinc-500 font-medium">Token contract:</span>
+                                <span className="text-muted-foreground font-medium">
+                                  Token contract:
+                                </span>
                                 <span
-                                  className="font-mono text-zinc-300 select-all"
+                                  className="font-mono text-foreground select-all"
                                   title={item.tokenAddress}
                                 >
                                   {item.tokenAddress}
@@ -270,21 +276,23 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
 
                             {item.logIndex !== undefined && (
                               <div className="flex items-center gap-1.5">
-                                <span className="text-zinc-500 font-medium">Log index:</span>
-                                <span className="font-mono text-zinc-300">#{item.logIndex}</span>
+                                <span className="text-muted-foreground font-medium">
+                                  Log index:
+                                </span>
+                                <span className="font-mono text-foreground">#{item.logIndex}</span>
                               </div>
                             )}
                           </div>
 
                           <div className="flex items-center gap-1.5">
-                            <span className="text-zinc-500 font-medium">Exact amount:</span>
+                            <span className="text-muted-foreground font-medium">Exact amount:</span>
                             <span
-                              className="font-mono font-semibold text-zinc-200 select-all"
+                              className="font-mono font-semibold text-foreground select-all"
                               title={item.formattedAmount !== null ? val.exact : item.rawAmount}
                             >
                               {item.formattedAmount !== null
                                 ? `${val.exact} ${item.symbol}`
-                                : `${item.rawAmount} (Raw amount, decimals unavailable)`}
+                                : `${item.rawAmount} (Raw amount)`}
                             </span>
                             <CopyButton
                               text={item.formattedAmount !== null ? val.exact : item.rawAmount}
@@ -304,7 +312,7 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
 
         {/* Expand / Collapse Button Bar */}
         {hasMore && (
-          <div className="p-3 text-center bg-zinc-950/90 border-t border-zinc-800">
+          <div className="p-3 text-center bg-surface-nested border-t border-border/80">
             <Button
               type="button"
               variant="secondary"
@@ -323,7 +331,7 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
         )}
       </div>
 
-      {/* 2. MOBILE VIEW: Stacked Card List (< 768px, specifically 320px & 375px) */}
+      {/* 2. MOBILE VIEW: Stacked Card List (< 768px) */}
       <div className="md:hidden space-y-3 min-w-0">
         {visibleMovements.map((item) => {
           const val = formatReadableAmount(item.formattedAmount);
@@ -333,12 +341,12 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
           return (
             <div
               key={item.id}
-              className="rounded-xl border border-zinc-800/80 bg-zinc-950/80 p-3.5 shadow-sm min-w-0"
+              className="rounded-xl border border-border/80 bg-surface-nested p-3.5 shadow-sm min-w-0"
             >
               {/* Card Header: Asset Type, Index, and Token Name */}
-              <div className="flex items-center justify-between border-b border-zinc-850/80 pb-2.5 min-w-0">
+              <div className="flex items-center justify-between border-b border-border/60 pb-2.5 min-w-0">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="font-mono text-xs font-semibold text-zinc-500">
+                  <span className="font-mono text-xs font-semibold text-muted-foreground">
                     #{item.index}
                   </span>
                   <Badge
@@ -348,7 +356,7 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
                     {isNative ? 'Native' : 'ERC-20'}
                   </Badge>
                   <span
-                    className="font-sans font-bold text-sm text-zinc-100 truncate min-w-0"
+                    className="font-sans font-bold text-sm text-foreground truncate min-w-0"
                     title={item.name || item.symbol}
                   >
                     {item.symbol}
@@ -358,24 +366,24 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
                 {/* Amount on Mobile Card Header */}
                 <div className="text-right shrink-0">
                   <span
-                    className="font-mono text-xs font-bold text-zinc-100"
+                    className="font-mono text-xs font-bold text-foreground"
                     title={item.formattedAmount !== null ? val.exact : item.rawAmount}
                   >
                     {item.formattedAmount !== null
                       ? `${val.display} ${item.symbol}`
-                      : `${item.rawAmount} (Raw amount)`}
+                      : `${item.rawAmount} (Raw)`}
                   </span>
                 </div>
               </div>
 
-              {/* Stacked Sender & Recipient: STRICTLY SEPARATE LINES FOR MOBILE READABILITY */}
+              {/* Stacked Sender & Recipient: Distinct lines for mobile readability */}
               <div className="pt-2.5 pb-1 space-y-2 text-xs font-sans min-w-0">
                 {/* From line */}
                 <div className="flex items-center justify-between gap-1.5 min-w-0">
-                  <span className="text-zinc-500 font-medium shrink-0">From:</span>
+                  <span className="text-muted-foreground font-medium shrink-0">From:</span>
                   <div className="flex items-center gap-1 min-w-0">
                     <span
-                      className="font-mono text-zinc-300 text-xs truncate min-w-0"
+                      className="font-mono text-foreground/90 text-xs truncate min-w-0"
                       title={item.from}
                     >
                       {truncateHashOrAddress(item.from, 6, 4)}
@@ -386,10 +394,10 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
 
                 {/* To line */}
                 <div className="flex items-center justify-between gap-1.5 min-w-0">
-                  <span className="text-zinc-500 font-medium shrink-0">To:</span>
+                  <span className="text-muted-foreground font-medium shrink-0">To:</span>
                   <div className="flex items-center gap-1 min-w-0">
                     <span
-                      className="font-mono text-zinc-300 text-xs truncate min-w-0"
+                      className="font-mono text-foreground/90 text-xs truncate min-w-0"
                       title={item.to || 'Contract Deployment'}
                     >
                       {item.to ? truncateHashOrAddress(item.to, 6, 4) : 'Contract Deployment'}
@@ -400,24 +408,24 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
               </div>
 
               {/* Row Detail Toggle */}
-              <div className="flex items-center justify-between pt-2 border-t border-zinc-850/80 mt-2 text-[11px] font-sans">
+              <div className="flex items-center justify-between pt-2 border-t border-border/60 mt-2 text-[11px] font-sans">
                 <button
                   type="button"
                   onClick={() => toggleRowDetail(item.id)}
-                  className="text-zinc-400 hover:text-zinc-200 transition focus:outline-none"
+                  className="min-h-[32px] px-2 text-muted-foreground hover:text-foreground transition focus:outline-none"
                 >
                   {isRowOpen ? 'Hide details' : 'Details'}
                 </button>
 
                 {val.isApproximate && item.formattedAmount !== null && (
                   <div className="flex items-center gap-1">
-                    <span className="text-zinc-500">Copy exact:</span>
+                    <span className="text-muted-foreground">Copy exact:</span>
                     <CopyButton text={val.exact} label="exact amount" iconOnly />
                   </div>
                 )}
                 {item.formattedAmount === null && (
                   <div className="flex items-center gap-1">
-                    <span className="text-zinc-500">Copy raw:</span>
+                    <span className="text-muted-foreground">Copy raw:</span>
                     <CopyButton text={item.rawAmount} label="raw amount" iconOnly />
                   </div>
                 )}
@@ -425,13 +433,15 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
 
               {/* Expanded Forensic Detail Drawer on Mobile */}
               {isRowOpen && (
-                <div className="mt-2 p-2.5 rounded-lg bg-zinc-900/60 border border-zinc-800 text-xs flex flex-col gap-1.5 min-w-0 font-sans">
+                <div className="mt-2 p-2.5 rounded-lg bg-surface-elevated/70 border border-border/70 text-xs flex flex-col gap-1.5 min-w-0 font-sans">
                   {!isNative && item.tokenAddress && (
                     <div className="flex items-center justify-between gap-2 min-w-0">
-                      <span className="text-zinc-500 shrink-0 font-medium">Token contract:</span>
+                      <span className="text-muted-foreground shrink-0 font-medium">
+                        Token contract:
+                      </span>
                       <div className="flex items-center gap-1 min-w-0">
                         <span
-                          className="font-mono text-zinc-300 text-[11px] truncate"
+                          className="font-mono text-foreground text-[11px] truncate"
                           title={item.tokenAddress}
                         >
                           {truncateHashOrAddress(item.tokenAddress, 6, 4)}
@@ -447,21 +457,21 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
 
                   {item.logIndex !== undefined && (
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-zinc-500 font-medium">Log index:</span>
-                      <span className="font-mono text-zinc-300">#{item.logIndex}</span>
+                      <span className="text-muted-foreground font-medium">Log index:</span>
+                      <span className="font-mono text-foreground">#{item.logIndex}</span>
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-zinc-800">
-                    <span className="text-zinc-500 font-medium">Exact amount:</span>
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/60">
+                    <span className="text-muted-foreground font-medium">Exact amount:</span>
                     <div className="flex items-center gap-1 min-w-0">
                       <span
-                        className="font-mono text-xs text-zinc-200 select-all truncate"
+                        className="font-mono text-xs text-foreground select-all truncate"
                         title={item.formattedAmount !== null ? val.exact : item.rawAmount}
                       >
                         {item.formattedAmount !== null
                           ? `${val.exact} ${item.symbol}`
-                          : `${item.rawAmount} (Raw amount, decimals unavailable)`}
+                          : `${item.rawAmount} (Raw)`}
                       </span>
                       <CopyButton
                         text={item.formattedAmount !== null ? val.exact : item.rawAmount}
@@ -478,13 +488,13 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
 
         {/* Mobile Expand / Collapse Button */}
         {hasMore && (
-          <div className="p-3 text-center bg-zinc-950/90 border border-zinc-850 rounded-xl">
+          <div className="p-3 text-center bg-surface-nested border border-border/80 rounded-xl">
             <Button
               type="button"
               variant="secondary"
               size="sm"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="gap-2 font-sans text-xs font-semibold w-full"
+              className="gap-2 font-sans text-xs font-semibold w-full min-h-[44px]"
             >
               <span>{isExpanded ? 'Show first 5' : `Show all ${totalMovements} transfers`}</span>
               {isExpanded ? (

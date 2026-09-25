@@ -30,7 +30,7 @@ export function LookupErrorState({ error, onRetry }: LookupErrorStateProps) {
     error.message || 'An unexpected error occurred while looking up this transaction.';
   let badgeText = 'Error';
   let badgeVariant:
-    'default' | 'secondary' | 'outline' | 'success' | 'warning' | 'destructive' | 'accent' =
+    'default' | 'secondary' | 'outline' | 'success' | 'warning' | 'destructive' | 'info' =
     'destructive';
   let IconComponent = AlertTriangle;
   let hint: string | null = null;
@@ -115,31 +115,31 @@ export function LookupErrorState({ error, onRetry }: LookupErrorStateProps) {
   }
 
   return (
-    <Card role="alert" className="border-rose-900/40 bg-zinc-950/80">
+    <Card role="alert" className="border-destructive/30 bg-surface-nested shadow-xl">
       <CardContent className="p-5 sm:p-6">
         <div className="flex items-start gap-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/90 text-rose-400 shadow-inner">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-destructive/30 bg-destructive/15 text-rose-400 shadow-inner">
             <IconComponent className="h-5 w-5" aria-hidden="true" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="mb-1 flex flex-wrap items-center gap-2">
-              <h3 className="text-sm font-semibold text-zinc-100 font-sans">{title}</h3>
+              <h3 className="text-sm font-semibold text-foreground font-sans">{title}</h3>
               <Badge variant={badgeVariant} className="font-mono text-[10px]">
                 {badgeText}
               </Badge>
             </div>
 
-            <p className="text-xs text-zinc-400 leading-relaxed font-sans">{description}</p>
+            <p className="text-xs text-muted-foreground leading-relaxed font-sans">{description}</p>
 
             {hint && (
-              <p className="mt-2 text-xs text-amber-300/90 font-sans bg-amber-500/10 border border-amber-500/20 rounded-md p-2">
+              <p className="mt-2.5 text-xs text-amber-300 font-sans bg-amber-500/10 border border-amber-500/20 rounded-lg p-2.5">
                 {hint}
               </p>
             )}
 
             {requestId && (
-              <p className="mt-3 font-mono text-[11px] text-zinc-500">
-                Request ID: <span className="text-zinc-400 select-all">{requestId}</span>
+              <p className="mt-3 font-mono text-[11px] text-muted-foreground">
+                Request ID: <span className="text-foreground select-all">{requestId}</span>
               </p>
             )}
 
@@ -150,9 +150,9 @@ export function LookupErrorState({ error, onRetry }: LookupErrorStateProps) {
                   variant="outline"
                   size="sm"
                   onClick={onRetry}
-                  className="gap-1.5"
+                  className="gap-1.5 min-h-[36px]"
                 >
-                  <RotateCcw className="h-3 w-3" />
+                  <RotateCcw className="h-3.5 w-3.5" />
                   <span>Retry Lookup</span>
                 </Button>
               </div>

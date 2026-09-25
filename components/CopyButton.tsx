@@ -33,10 +33,10 @@ export function CopyButton({ text, label, iconOnly = false, className = '' }: Co
       title={copied ? 'Copied to clipboard!' : actionLabel}
       aria-label={copied ? 'Copied to clipboard!' : actionLabel}
       className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-md p-1 transition-all duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400 active:scale-95',
+        'inline-flex shrink-0 items-center justify-center rounded-md p-1 transition-all duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring active:scale-95',
         copied
           ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-          : 'bg-zinc-800/80 text-zinc-400 border border-zinc-700/60 hover:bg-zinc-750 hover:text-zinc-100 hover:border-zinc-600',
+          : 'bg-surface-elevated/80 text-muted-foreground border border-border/70 hover:bg-secondary hover:text-foreground hover:border-border',
         iconOnly ? 'h-6 w-6' : 'px-2 py-0.5 text-[11px] font-sans font-medium gap-1',
         className,
       )}

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Boxes } from 'lucide-react';
 import type { TransactionData, TokenTransferItem } from '../lib/api-types';
 import {
   formatReadableAmount,
@@ -43,10 +43,8 @@ export function MovingAssetsSummary({ data }: MovingAssetsSummaryProps) {
     return null;
   }
 
-  // Token identity strictly follows chain and contract address (native as distinct)
   const assetMap = new Map<string, AssetSummaryItem>();
 
-  // 1. Process Native ETH with precise BigInt representation
   if (hasNativeValue) {
     const rawVal = BigInt(data.value.raw);
     const decimals = 18;
@@ -68,7 +66,6 @@ export function MovingAssetsSummary({ data }: MovingAssetsSummaryProps) {
     });
   }
 
-  // 2. Process ERC-20 transfers - Grouping strictly by chain and token contract address
   tokenTransfers.forEach((tx: TokenTransferItem) => {
     const key = tx.tokenAddress
       ? `${data.chain}:${tx.tokenAddress.toLowerCase()}`
@@ -136,35 +133,38 @@ export function MovingAssetsSummary({ data }: MovingAssetsSummaryProps) {
     <section aria-label="Assets involved" className="p-5 sm:p-6 min-w-0">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-3 min-w-0">
         <div className="flex items-center gap-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 font-sans">
+          <Boxes className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-sans">
             Assets involved
           </h3>
-          <Badge variant="outline" className="font-mono text-[11px] text-zinc-300">
+          <Badge variant="outline" className="font-mono text-[11px]">
             {assets.length} unique {assets.length === 1 ? 'asset' : 'assets'}
           </Badge>
         </div>
-        <span className="text-[11px] text-zinc-500 font-sans">
+        <span className="text-[11px] text-muted-foreground font-sans">
           Tokens and transfer count in this transaction.
         </span>
       </div>
 
-      {/* Compact List */}
-      <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/80 divide-y divide-zinc-850/60 overflow-hidden min-w-0 shadow-sm">
+      <div className="rounded-xl border border-border/80 bg-surface-nested divide-y divide-border/50 overflow-hidden min-w-0 shadow-inner">
         {visibleAssets.map((asset) => {
           const isDetailOpen = openDetailId === asset.id;
 
           return (
             <div
               key={asset.id}
-              className="p-3.5 sm:px-4 transition-colors hover:bg-zinc-900/40 min-w-0"
+              className="p-3.5 sm:px-4 transition-colors hover:bg-surface-elevated/40 min-w-0"
             >
               <div className="flex flex-wrap items-center justify-between gap-2 min-w-0">
                 {/* Left: Token Symbol & Name */}
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-semibold text-xs sm:text-sm text-zinc-100 font-sans truncate">
+                  <span className="font-semibold text-xs sm:text-sm text-foreground font-sans truncate">
                     {asset.symbol}
                   </span>
-                  <span className="text-[11px] text-zinc-500 font-sans truncate" title={asset.name}>
+                  <span
+                    className="text-[11px] text-muted-foreground font-sans truncate"
+                    title={asset.name}
+                  >
                     ({asset.name})
                   </span>
                   {asset.isNative && (
@@ -176,7 +176,7 @@ export function MovingAssetsSummary({ data }: MovingAssetsSummaryProps) {
 
                 {/* Right: Transfer Count & Detail Toggle */}
                 <div className="flex items-center gap-2 shrink-0 ml-auto">
-                  <span className="font-mono text-xs text-zinc-300 bg-zinc-900/90 px-2 py-0.5 rounded-md border border-zinc-800">
+                  <span className="font-mono text-xs text-foreground/90 bg-surface-elevated px-2 py-0.5 rounded-md border border-border/60">
                     {asset.count} {asset.count === 1 ? 'transfer' : 'transfers'}
                   </span>
                   <Button
@@ -184,7 +184,7 @@ export function MovingAssetsSummary({ data }: MovingAssetsSummaryProps) {
                     variant="outline"
                     size="sm"
                     onClick={() => toggleDetail(asset.id)}
-                    className="font-sans text-[11px] h-6 px-2 text-zinc-400 hover:text-zinc-200"
+                    className="font-sans text-[11px] h-6 px-2 text-muted-foreground hover:text-foreground"
                   >
                     {isDetailOpen ? 'Hide total' : 'View total'}
                   </Button>
@@ -193,18 +193,18 @@ export function MovingAssetsSummary({ data }: MovingAssetsSummaryProps) {
 
               {/* Expandable Aggregate Volume Detail with BigInt precision */}
               {isDetailOpen && (
-                <div className="mt-2.5 pt-2.5 border-t border-zinc-900 flex flex-col gap-1 text-xs min-w-0 font-sans">
+                <div className="mt-2.5 pt-2.5 border-t border-border/50 flex flex-col gap-1 text-xs min-w-0 font-sans">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-zinc-400 font-medium shrink-0">
+                    <span className="text-muted-foreground font-medium shrink-0">
                       Total amount across transfers:
                     </span>
                     <span
-                      className="font-mono font-semibold text-zinc-100 truncate"
+                      className="font-mono font-semibold text-foreground truncate"
                       title={asset.exactVolume}
                     >
                       {asset.hasKnownDecimals
                         ? `${asset.displayVolume} ${asset.symbol}`
-                        : `${asset.exactVolume} (Raw amount, decimals unavailable)`}
+                        : `${asset.exactVolume} (Raw amount)`}
                     </span>
                     <CopyButton
                       text={asset.exactVolume}
@@ -213,7 +213,7 @@ export function MovingAssetsSummary({ data }: MovingAssetsSummaryProps) {
                       className="shrink-0"
                     />
                   </div>
-                  <p className="text-[11px] text-zinc-500 leading-normal">
+                  <p className="text-[11px] text-muted-foreground leading-normal">
                     Note: Assets transferred through multiple intermediaries may be counted more
                     than once.
                   </p>
@@ -223,13 +223,13 @@ export function MovingAssetsSummary({ data }: MovingAssetsSummaryProps) {
           );
         })}
 
-        {/* Compact Toggle: Show all assets vs Show first 5 */}
+        {/* Compact Toggle */}
         {hasMore && (
-          <div className="p-2.5 text-center bg-zinc-950/90 border-t border-zinc-850">
+          <div className="p-2.5 text-center bg-surface-nested border-t border-border/60">
             <button
               type="button"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="inline-flex items-center gap-1.5 font-sans text-xs font-medium text-zinc-400 hover:text-zinc-200 transition focus:outline-none"
+              className="inline-flex items-center gap-1.5 font-sans text-xs font-medium text-muted-foreground hover:text-foreground transition focus:outline-none min-h-[36px]"
             >
               <span>{isExpanded ? 'Show first 5' : `Show all ${assets.length} assets`}</span>
               {isExpanded ? (
