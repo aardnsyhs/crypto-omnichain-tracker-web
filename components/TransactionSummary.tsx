@@ -9,6 +9,7 @@ import {
   formatTimestamp,
   truncateHashOrAddress,
 } from '../lib/validation';
+import { NETWORK_REGISTRY } from '../lib/network-registry';
 import { CopyButton } from './CopyButton';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -77,31 +78,19 @@ export function TransactionSummary({
   };
 
   const getChainLabel = () => {
-    const map: Record<string, string> = {
-      ethereum: 'Ethereum',
-      bsc: 'BNB Smart Chain',
-      polygon: 'Polygon PoS',
-    };
-    return map[data.chain] || data.chain;
+    const config = NETWORK_REGISTRY[data.chain];
+    return config?.name || data.chain;
   };
 
   const getChainBadgeStyle = () => {
-    switch (data.chain.toLowerCase()) {
-      case 'ethereum':
-        return 'border-sky-500/30 bg-sky-950/40 text-sky-300';
-      case 'bsc':
-        return 'border-amber-500/30 bg-amber-950/40 text-amber-300';
-      case 'polygon':
-        return 'border-violet-500/30 bg-violet-950/40 text-violet-300';
-      default:
-        return 'border-border/60 bg-secondary text-secondary-foreground';
-    }
+    const config = NETWORK_REGISTRY[data.chain];
+    return config?.visuals.tickerClass || 'border-border/60 bg-secondary text-secondary-foreground';
   };
 
   // Derive transaction structure & hero focus
   const isFailed = data.status === 'failed';
   const hasNativeValue =
-    Boolean(data.value?.raw) && data.value.raw !== '0' && data.value.raw !== '0x0';
+    Boolean(data.value?.raw) && data.value?.raw !== '0' && data.value?.raw !== '0x0';
   const tokenTransfers = data.tokenTransfers || [];
   const approvals = data.approvals || [];
   const totalTransfers = (hasNativeValue ? 1 : 0) + tokenTransfers.length;
@@ -214,7 +203,7 @@ export function TransactionSummary({
     }
 
     if (isSingleTransfer) {
-      if (hasNativeValue) {
+      if (hasNativeValue && data.value) {
         const valFormatted = formatReadableAmount(data.value.formatted);
         return (
           <div>
@@ -329,11 +318,13 @@ export function TransactionSummary({
           <span className="font-sans text-muted-foreground font-medium shrink-0">From:</span>
           <span
             className="font-mono font-medium text-foreground truncate min-w-0"
-            title={data.from}
+            title={data.from || ''}
           >
-            {truncateHashOrAddress(data.from, 6, 4)}
+            {truncateHashOrAddress(data.from || '', 6, 4)}
           </span>
-          <CopyButton text={data.from} label="initiator address" iconOnly className="shrink-0" />
+          {data.from && (
+            <CopyButton text={data.from} label="initiator address" iconOnly className="shrink-0" />
+          )}
         </div>
 
         <span className="text-border hidden sm:inline">|</span>

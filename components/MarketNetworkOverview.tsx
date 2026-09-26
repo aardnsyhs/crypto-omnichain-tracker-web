@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { OverviewResponse, NetworkOverviewItem } from '../lib/api-types';
 import { ApiClient } from '../lib/api-client';
+import { NETWORK_REGISTRY } from '../lib/network-registry';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -46,6 +47,9 @@ export function formatUsdPrice(price: number | null): string {
     return 'Unavailable';
   }
 
+  if (price < 0.01) {
+    return `$${price.toFixed(4)}`;
+  }
   if (price < 1) {
     return `$${price.toFixed(4)}`;
   }
@@ -75,38 +79,74 @@ export function formatChange24h(change: number | null): {
   return { text: '0.00%', colorClass: 'text-muted-foreground' };
 }
 
-export function formatGasGwei(
-  gweiStr: string | null,
-  gasNote?: string | null,
+export function formatFeeRate(
+  item: NetworkOverviewItem,
 ): {
   display: string;
   exact: string | null;
   note: string | null;
 } {
-  if (!gweiStr || gweiStr === 'null') {
+  const feeRate = item.network?.suggestedFeeRate;
+  const unit = item.network?.feeUnit || (item.family === 'evm' ? 'Gwei' : 'sat/byte');
+
+  if (!feeRate || feeRate === 'null') {
+    // Fallback for EVM gas price if suggestedFeeRate missing
+    if (item.network?.suggestedGasPriceGwei) {
+      const num = Number.parseFloat(item.network.suggestedGasPriceGwei);
+      if (Number.isFinite(num)) {
+        if (num === 0) {
+          return {
+            display: '0 Gwei (est.)',
+            exact: '0 Gwei',
+            note: item.network.gasNote || 'Provider estimated 0 Gwei under low congestion',
+          };
+        }
+        if (num > 0 && num < 0.01) {
+          return { display: '< 0.01 Gwei', exact: `${item.network.suggestedGasPriceGwei} Gwei`, note: null };
+        }
+        return { display: `${num.toFixed(2)} Gwei`, exact: `${item.network.suggestedGasPriceGwei} Gwei`, note: null };
+      }
+    }
     return { display: 'Unavailable', exact: null, note: null };
   }
 
-  const num = Number.parseFloat(gweiStr);
+  const num = Number.parseFloat(feeRate);
   if (!Number.isFinite(num)) {
-    return { display: 'Unavailable', exact: null, note: null };
+    return { display: `${feeRate} ${unit}`, exact: `${feeRate} ${unit}`, note: null };
   }
 
   if (num === 0) {
     return {
-      display: '0 Gwei (est.)',
-      exact: '0 Gwei',
-      note: gasNote || 'Provider estimated 0 Gwei under low congestion',
+      display: `0 ${unit}`,
+      exact: `0 ${unit}`,
+      note: item.network?.feeRateNote || item.network?.gasNote || 'Low congestion rate',
     };
   }
 
+  if (unit === 'sat/byte') {
+    // Satoshis per byte
+    if (num >= 1000) {
+      return {
+        display: `${num.toLocaleString('en-US')} sat/byte`,
+        exact: `${num} sat/byte`,
+        note: null,
+      };
+    }
+    return {
+      display: `${num} sat/byte`,
+      exact: `${num} sat/byte`,
+      note: null,
+    };
+  }
+
+  // Gwei or other units
   if (num > 0 && num < 0.01) {
-    return { display: '< 0.01 Gwei', exact: `${gweiStr} Gwei`, note: null };
+    return { display: `< 0.01 ${unit}`, exact: `${feeRate} ${unit}`, note: null };
   }
 
   return {
-    display: `${num.toFixed(2)} Gwei`,
-    exact: `${gweiStr} Gwei`,
+    display: `${num.toFixed(2)} ${unit}`,
+    exact: `${feeRate} ${unit}`,
     note: null,
   };
 }
@@ -120,12 +160,6 @@ export function formatSourceTimestamp(isoString: string | null): string {
     return '';
   }
 }
-
-const NETWORK_TICKER_CLASSES: Record<string, string> = {
-  ethereum: 'border-sky-500/30 bg-sky-950/40 text-sky-300',
-  bsc: 'border-amber-500/30 bg-amber-950/40 text-amber-300',
-  polygon: 'border-violet-500/30 bg-violet-950/40 text-violet-300',
-};
 
 export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOverviewProps) {
   const [data, setData] = useState<NetworkOverviewItem[]>([]);
@@ -192,7 +226,7 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
     };
   }, [apiClient]);
 
-  // Periodic polling every 45s (only when visible and tab active)
+  // Periodic polling every 60s (only when visible and tab active)
   useEffect(() => {
     if (!isVisible) return;
 
@@ -200,7 +234,7 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
       if (document.visibilityState === 'visible') {
         void loadOverview();
       }
-    }, 45000);
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [loadOverview, isVisible]);
@@ -224,8 +258,7 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
                   <span className="flex h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]" />
                 </CardTitle>
                 <CardDescription className="text-xs text-muted-foreground mt-0.5">
-                  Live native coin quotes, 24h momentum, latest block heights, and network gas
-                  estimates from official Blockchair stats API.
+                  Live native coin quotes, 24h momentum, latest block heights, and suggested fee rates from official Blockchair API.
                 </CardDescription>
               </div>
             </div>
@@ -283,6 +316,9 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
                 <Skeleton className="h-10 w-full rounded-md" />
                 <Skeleton className="h-10 w-full rounded-md" />
                 <Skeleton className="h-10 w-full rounded-md" />
+                <Skeleton className="h-10 w-full rounded-md" />
+                <Skeleton className="h-10 w-full rounded-md" />
+                <Skeleton className="h-10 w-full rounded-md" />
               </div>
               <div className="space-y-2.5 md:hidden">
                 <Skeleton className="h-24 w-full rounded-xl" />
@@ -295,7 +331,7 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
           {/* Loaded Content */}
           {Boolean(data.length) && (
             <>
-              {/* Desktop Table View (>= 768px) - 15% tighter row height for dense analytics */}
+              {/* Desktop Table View (>= 768px) */}
               <div className="hidden overflow-x-auto md:block">
                 <Table>
                   <TableHeader>
@@ -316,7 +352,7 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
                         Block Time
                       </TableHead>
                       <TableHead className="py-2 px-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Suggested Gas
+                        Suggested fee rate
                       </TableHead>
                       <TableHead className="py-2 pl-3.5 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Status
@@ -326,14 +362,12 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
                   <TableBody>
                     {data.map((item) => {
                       const change = formatChange24h(item.market?.change24h ?? null);
-                      const gas = formatGasGwei(
-                        item.network?.suggestedGasPriceGwei ?? null,
-                        item.network?.gasNote ?? null,
-                      );
+                      const fee = formatFeeRate(item);
                       const isPositive = (item.market?.change24h ?? 0) > 0;
                       const isNegative = (item.market?.change24h ?? 0) < 0;
+                      const config = NETWORK_REGISTRY[item.chain];
                       const tickerClass =
-                        NETWORK_TICKER_CLASSES[item.chain] ||
+                        config?.visuals.tickerClass ||
                         'border-border/60 bg-secondary text-secondary-foreground';
                       const unindexedReason =
                         item.network?.reason ||
@@ -372,97 +406,97 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
                           <TableCell className="py-2.5 px-3 text-right font-mono tabular-nums text-foreground font-semibold text-sm">
                             {item.market?.priceUsd !== null &&
                             item.market?.priceUsd !== undefined ? (
-                              formatUsdPrice(item.market.priceUsd)
-                            ) : (
-                              <Tooltip>
-                                <TooltipTrigger
-                                  render={
-                                    <span className="text-muted-foreground font-normal text-xs cursor-help">
-                                      Unavailable
-                                    </span>
-                                  }
-                                />
-                                <TooltipContent>{unindexedReason}</TooltipContent>
-                              </Tooltip>
-                            )}
+                                formatUsdPrice(item.market.priceUsd)
+                              ) : (
+                                <Tooltip>
+                                  <TooltipTrigger
+                                    render={
+                                      <span className="text-muted-foreground font-normal text-xs cursor-help">
+                                        Unavailable
+                                      </span>
+                                    }
+                                  />
+                                  <TooltipContent>{unindexedReason}</TooltipContent>
+                                </Tooltip>
+                              )}
                           </TableCell>
 
                           {/* 24h Change */}
                           <TableCell className="py-2.5 px-3 text-right">
                             {item.market?.change24h !== null &&
                             item.market?.change24h !== undefined ? (
-                              <div
-                                className={cn(
-                                  'inline-flex items-center justify-end gap-1 font-mono text-xs tabular-nums font-semibold',
-                                  change.colorClass,
-                                )}
-                              >
-                                {isPositive && (
-                                  <TrendingUp className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                                )}
-                                {isNegative && (
-                                  <TrendingDown
-                                    className="h-3.5 w-3.5 shrink-0"
-                                    aria-hidden="true"
+                                <div
+                                  className={cn(
+                                    'inline-flex items-center justify-end gap-1 font-mono text-xs tabular-nums font-semibold',
+                                    change.colorClass,
+                                  )}
+                                >
+                                  {isPositive && (
+                                    <TrendingUp className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                                  )}
+                                  {isNegative && (
+                                    <TrendingDown
+                                      className="h-3.5 w-3.5 shrink-0"
+                                      aria-hidden="true"
+                                    />
+                                  )}
+                                  <span>{change.text}</span>
+                                </div>
+                              ) : (
+                                <Tooltip>
+                                  <TooltipTrigger
+                                    render={
+                                      <span className="text-muted-foreground font-normal text-xs cursor-help">
+                                        Unavailable
+                                      </span>
+                                    }
                                   />
-                                )}
-                                <span>{change.text}</span>
-                              </div>
-                            ) : (
-                              <Tooltip>
-                                <TooltipTrigger
-                                  render={
-                                    <span className="text-muted-foreground font-normal text-xs cursor-help">
-                                      Unavailable
-                                    </span>
-                                  }
-                                />
-                                <TooltipContent>{unindexedReason}</TooltipContent>
-                              </Tooltip>
-                            )}
+                                  <TooltipContent>{unindexedReason}</TooltipContent>
+                                </Tooltip>
+                              )}
                           </TableCell>
 
                           {/* Latest Block */}
                           <TableCell className="py-2.5 px-3 text-right font-mono tabular-nums text-foreground/90 text-xs">
                             {item.network?.latestBlockNumber !== null &&
                             item.network?.latestBlockNumber !== undefined ? (
-                              `#${item.network.latestBlockNumber.toLocaleString('en-US')}`
-                            ) : (
-                              <Tooltip>
-                                <TooltipTrigger
-                                  render={
-                                    <span className="text-muted-foreground font-normal text-xs cursor-help">
-                                      Unavailable
-                                    </span>
-                                  }
-                                />
-                                <TooltipContent>{unindexedReason}</TooltipContent>
-                              </Tooltip>
-                            )}
+                                `#${item.network.latestBlockNumber.toLocaleString('en-US')}`
+                              ) : (
+                                <Tooltip>
+                                  <TooltipTrigger
+                                    render={
+                                      <span className="text-muted-foreground font-normal text-xs cursor-help">
+                                        Unavailable
+                                      </span>
+                                    }
+                                  />
+                                  <TooltipContent>{unindexedReason}</TooltipContent>
+                                </Tooltip>
+                              )}
                           </TableCell>
 
                           {/* Block Time */}
                           <TableCell className="py-2.5 px-3 text-right font-mono tabular-nums text-muted-foreground text-xs">
                             {item.network?.latestBlockTimestamp !== null &&
                             item.network?.latestBlockTimestamp !== undefined ? (
-                              formatRelativeTime(item.network.latestBlockTimestamp)
-                            ) : (
-                              <Tooltip>
-                                <TooltipTrigger
-                                  render={
-                                    <span className="text-muted-foreground font-normal text-xs cursor-help">
-                                      Unavailable
-                                    </span>
-                                  }
-                                />
-                                <TooltipContent>{unindexedReason}</TooltipContent>
-                              </Tooltip>
-                            )}
+                                formatRelativeTime(item.network.latestBlockTimestamp)
+                              ) : (
+                                <Tooltip>
+                                  <TooltipTrigger
+                                    render={
+                                      <span className="text-muted-foreground font-normal text-xs cursor-help">
+                                        Unavailable
+                                      </span>
+                                    }
+                                  />
+                                  <TooltipContent>{unindexedReason}</TooltipContent>
+                                </Tooltip>
+                              )}
                           </TableCell>
 
-                          {/* Suggested Gas Price */}
+                          {/* Suggested Fee Rate */}
                           <TableCell className="py-2.5 px-3 text-right font-mono tabular-nums text-foreground/90 text-xs">
-                            {gas.display === 'Unavailable' ? (
+                            {fee.display === 'Unavailable' ? (
                               <Tooltip>
                                 <TooltipTrigger
                                   render={
@@ -473,20 +507,20 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
                                 />
                                 <TooltipContent>{unindexedReason}</TooltipContent>
                               </Tooltip>
-                            ) : gas.note ? (
+                            ) : fee.note ? (
                               <Tooltip>
                                 <TooltipTrigger
                                   render={
                                     <span className="text-foreground/90 cursor-help underline decoration-dotted underline-offset-2">
-                                      {gas.display}
+                                      {fee.display}
                                     </span>
                                   }
                                 />
-                                <TooltipContent>{gas.note}</TooltipContent>
+                                <TooltipContent>{fee.note}</TooltipContent>
                               </Tooltip>
                             ) : (
-                              <span title={gas.exact ? `Exact: ${gas.exact}` : undefined}>
-                                {gas.display}
+                              <span title={fee.exact ? `Exact: ${fee.exact}` : undefined}>
+                                {fee.display}
                               </span>
                             )}
                           </TableCell>
@@ -549,14 +583,12 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
               <div className="space-y-2.5 md:hidden">
                 {data.map((item) => {
                   const change = formatChange24h(item.market?.change24h ?? null);
-                  const gas = formatGasGwei(
-                    item.network?.suggestedGasPriceGwei ?? null,
-                    item.network?.gasNote ?? null,
-                  );
+                  const fee = formatFeeRate(item);
                   const isPositive = (item.market?.change24h ?? 0) > 0;
                   const isNegative = (item.market?.change24h ?? 0) < 0;
+                  const config = NETWORK_REGISTRY[item.chain];
                   const tickerClass =
-                    NETWORK_TICKER_CLASSES[item.chain] ||
+                    config?.visuals.tickerClass ||
                     'border-border/60 bg-secondary text-secondary-foreground';
                   const unindexedReason =
                     item.network?.reason ||
@@ -622,19 +654,19 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
                           <div className="font-mono text-sm font-semibold text-foreground tabular-nums mt-0.5">
                             {item.market?.priceUsd !== null &&
                             item.market?.priceUsd !== undefined ? (
-                              formatUsdPrice(item.market.priceUsd)
-                            ) : (
-                              <Tooltip>
-                                <TooltipTrigger
-                                  render={
-                                    <span className="text-muted-foreground font-normal text-xs cursor-help">
-                                      Unavailable
-                                    </span>
-                                  }
-                                />
-                                <TooltipContent>{unindexedReason}</TooltipContent>
-                              </Tooltip>
-                            )}
+                                formatUsdPrice(item.market.priceUsd)
+                              ) : (
+                                <Tooltip>
+                                  <TooltipTrigger
+                                    render={
+                                      <span className="text-muted-foreground font-normal text-xs cursor-help">
+                                        Unavailable
+                                      </span>
+                                    }
+                                  />
+                                  <TooltipContent>{unindexedReason}</TooltipContent>
+                                </Tooltip>
+                              )}
                           </div>
                         </div>
 
@@ -648,27 +680,27 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
                           >
                             {item.market?.change24h !== null &&
                             item.market?.change24h !== undefined ? (
-                              <>
-                                {isPositive && (
-                                  <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
-                                )}
-                                {isNegative && (
-                                  <TrendingDown className="h-3.5 w-3.5" aria-hidden="true" />
-                                )}
-                                <span>{change.text}</span>
-                              </>
-                            ) : (
-                              <Tooltip>
-                                <TooltipTrigger
-                                  render={
-                                    <span className="text-muted-foreground font-normal text-xs cursor-help">
-                                      Unavailable
-                                    </span>
-                                  }
-                                />
-                                <TooltipContent>{unindexedReason}</TooltipContent>
-                              </Tooltip>
-                            )}
+                                <>
+                                  {isPositive && (
+                                    <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
+                                  )}
+                                  {isNegative && (
+                                    <TrendingDown className="h-3.5 w-3.5" aria-hidden="true" />
+                                  )}
+                                  <span>{change.text}</span>
+                                </>
+                              ) : (
+                                <Tooltip>
+                                  <TooltipTrigger
+                                    render={
+                                      <span className="text-muted-foreground font-normal text-xs cursor-help">
+                                        Unavailable
+                                      </span>
+                                    }
+                                  />
+                                  <TooltipContent>{unindexedReason}</TooltipContent>
+                                </Tooltip>
+                              )}
                           </div>
                         </div>
 
@@ -680,37 +712,37 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
                           <div className="font-mono text-xs text-foreground/90 tabular-nums mt-0.5">
                             {item.network?.latestBlockNumber !== null &&
                             item.network?.latestBlockNumber !== undefined ? (
-                              `#${item.network.latestBlockNumber.toLocaleString('en-US')}`
-                            ) : (
-                              <Tooltip>
-                                <TooltipTrigger
-                                  render={
-                                    <span className="text-muted-foreground font-normal text-xs cursor-help">
-                                      Unavailable
-                                    </span>
-                                  }
-                                />
-                                <TooltipContent>{unindexedReason}</TooltipContent>
-                              </Tooltip>
-                            )}
+                                `#${item.network.latestBlockNumber.toLocaleString('en-US')}`
+                              ) : (
+                                <Tooltip>
+                                  <TooltipTrigger
+                                    render={
+                                      <span className="text-muted-foreground font-normal text-xs cursor-help">
+                                        Unavailable
+                                      </span>
+                                    }
+                                  />
+                                  <TooltipContent>{unindexedReason}</TooltipContent>
+                                </Tooltip>
+                              )}
                           </div>
                           <div className="text-[10px] text-muted-foreground font-mono mt-0.5">
                             {item.network?.latestBlockTimestamp !== null &&
                             item.network?.latestBlockTimestamp !== undefined ? (
-                              formatRelativeTime(item.network.latestBlockTimestamp)
-                            ) : (
-                              <span className="text-muted-foreground">Unavailable</span>
-                            )}
+                                formatRelativeTime(item.network.latestBlockTimestamp)
+                              ) : (
+                                <span className="text-muted-foreground">Unavailable</span>
+                              )}
                           </div>
                         </div>
 
                         <div className="rounded-lg bg-surface-elevated/40 border border-border/40 p-2">
                           <span className="text-[11px] text-muted-foreground flex items-center gap-1">
                             <Fuel className="h-3 w-3 text-muted-foreground" />
-                            <span>Suggested Gas</span>
+                            <span>Suggested fee rate</span>
                           </span>
                           <div className="font-mono text-xs text-foreground/90 tabular-nums mt-0.5">
-                            {gas.display === 'Unavailable' ? (
+                            {fee.display === 'Unavailable' ? (
                               <Tooltip>
                                 <TooltipTrigger
                                   render={
@@ -721,24 +753,24 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
                                 />
                                 <TooltipContent>{unindexedReason}</TooltipContent>
                               </Tooltip>
-                            ) : gas.note ? (
+                            ) : fee.note ? (
                               <Tooltip>
                                 <TooltipTrigger
                                   render={
                                     <span className="text-foreground/90 cursor-help underline decoration-dotted underline-offset-2">
-                                      {gas.display}
+                                      {fee.display}
                                     </span>
                                   }
                                 />
-                                <TooltipContent>{gas.note}</TooltipContent>
+                                <TooltipContent>{fee.note}</TooltipContent>
                               </Tooltip>
                             ) : (
-                              gas.display
+                              fee.display
                             )}
                           </div>
-                          {gas.exact && gas.exact !== gas.display && (
+                          {fee.exact && fee.exact !== fee.display && (
                             <div className="text-[10px] text-muted-foreground font-mono truncate max-w-[120px] mt-0.5">
-                              {gas.exact}
+                              {fee.exact}
                             </div>
                           )}
                         </div>
@@ -747,11 +779,7 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
                       {/* Source Footnote */}
                       <div className="mt-2.5 border-t border-border/40 pt-1.5 text-[10px] text-muted-foreground flex flex-col gap-0.5">
                         <div>
-                          Source:{' '}
-                          {item.market?.status === 'available' ||
-                          item.network?.status === 'available'
-                            ? 'Blockchair (stats)'
-                            : 'Blockchair (unindexed in stats catalog)'}
+                          Source: Blockchair official API ({config?.name || item.name} stats)
                           {item.network?.updatedAt &&
                             ` (${formatSourceTimestamp(item.network.updatedAt)})`}
                         </div>
@@ -764,12 +792,10 @@ export function MarketNetworkOverview({ apiClient, isVisible }: MarketNetworkOve
               {/* Explanatory Note & Source Attribution */}
               <div className="mt-3 border-t border-border/60 pt-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-[11px] text-muted-foreground">
                 <div>
-                  Source: Official Blockchair API (Ethereum stats; BSC & Polygon PoS are unindexed
-                  in Blockchair stats API catalog).
+                  Source: Official Blockchair API across 6 active networks (Ethereum, Bitcoin, Litecoin, Dogecoin, Bitcoin Cash, and Dash).
                 </div>
                 <div className="text-muted-foreground/80">
-                  Gas estimates are advisory; actual network execution costs vary by gas limit and
-                  priority fee.
+                  Fee rates are advisory; network execution costs depend on transaction size and miner/validator fee market conditions.
                 </div>
               </div>
             </>

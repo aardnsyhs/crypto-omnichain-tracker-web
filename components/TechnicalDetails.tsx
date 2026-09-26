@@ -151,11 +151,11 @@ export function TechnicalDetails({ data, meta }: TechnicalDetailsProps) {
                 Native Transaction Value
               </span>
               <div className="mt-1 flex items-baseline gap-1.5 text-foreground">
-                <span className="text-sm font-bold font-mono">{data.value.formatted}</span>
-                <span className="text-muted-foreground font-mono text-xs">{data.value.symbol}</span>
+                <span className="text-sm font-bold font-mono">{data.value?.formatted || '0'}</span>
+                <span className="text-muted-foreground font-mono text-xs">{data.value?.symbol || 'ETH'}</span>
               </div>
               <span className="text-[10px] text-muted-foreground block mt-0.5 font-mono">
-                Raw: {data.value.raw} wei
+                Raw: {data.value?.raw || '0'} wei
               </span>
             </div>
 

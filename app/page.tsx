@@ -128,7 +128,7 @@ export default function HomePage() {
       const chainParam = params.get('chain');
       const txParam = params.get('tx') || params.get('hash');
 
-      if (chainParam && isValidChain(chainParam) && txParam && isValidTransactionHash(txParam)) {
+      if (chainParam && isValidChain(chainParam) && txParam && isValidTransactionHash(txParam, chainParam)) {
         const chain = chainParam as SupportedChain;
         const hash = txParam;
         const searchId = ++latestSearchIdRef.current;
@@ -182,19 +182,19 @@ export default function HomePage() {
               </span>
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" aria-hidden="true" />
               <span className="font-sans font-medium text-foreground">
-                EVM Investigative Ledger
+                Omnichain Investigative Ledger
               </span>
               <span className="h-3 w-px bg-border/80" />
               <span className="font-mono text-[11px] text-muted-foreground">
-                Live data • 3 networks • Verified decoding
+                Live data • 6 networks • Verified decoding & UTXO ledger
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-foreground font-sans">
               Transaction Story Explorer
             </h1>
             <p className="mt-2 max-w-lg text-xs sm:text-sm text-muted-foreground leading-relaxed font-sans">
-              Investigate transaction intent, token movements, and approval allowances across EVM
-              chains with verified on-chain decoding.
+              Investigate transaction intent, UTXO flows, token movements, and approval allowances
+              across 6 supported networks with verified on-chain data.
             </p>
           </header>
         )}

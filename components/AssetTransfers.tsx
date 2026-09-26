@@ -33,13 +33,13 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
   const DEFAULT_LIMIT = 5;
 
   const hasNativeValue =
-    Boolean(data.value?.raw) && data.value.raw !== '0' && data.value.raw !== '0x0';
+    Boolean(data.value?.raw) && data.value?.raw !== '0' && data.value?.raw !== '0x0';
   const tokenTransfers = data.tokenTransfers || [];
 
   // Build unified indexed list of all movements to maintain strict chronological order
   const movements: NormalizedMovement[] = [];
 
-  if (hasNativeValue) {
+  if (hasNativeValue && data.value) {
     movements.push({
       id: 'native-0',
       index: 1,
@@ -48,7 +48,7 @@ export function AssetTransfers({ data }: AssetTransfersProps) {
       name: 'Native ' + data.value.symbol,
       rawAmount: data.value.raw,
       formattedAmount: data.value.formatted,
-      from: data.from,
+      from: data.from || '',
       to: data.to || 'Contract Deployment',
     });
   }

@@ -1,23 +1,33 @@
 import type { SupportedChain } from './api-types';
+import {
+  ACTIVE_CHAINS,
+  ALL_SUPPORTED_CHAINS,
+  NETWORK_REGISTRY,
+  getNetworkConfig,
+  isEvmChain,
+  isSupportedChain,
+  isValidHashForChain,
+} from './network-registry';
 
-export const SUPPORTED_CHAINS: { id: SupportedChain; name: string; symbol: string }[] = [
-  { id: 'ethereum', name: 'Ethereum Mainnet', symbol: 'ETH' },
-  { id: 'bsc', name: 'BNB Smart Chain', symbol: 'BNB' },
-  { id: 'polygon', name: 'Polygon PoS', symbol: 'POL' },
-];
+export const SUPPORTED_CHAINS: { id: SupportedChain; name: string; symbol: string }[] =
+  ALL_SUPPORTED_CHAINS.map((id) => ({
+    id,
+    name: NETWORK_REGISTRY[id].name,
+    symbol: NETWORK_REGISTRY[id].nativeSymbol,
+  }));
 
 /**
- * Checks if string is a valid 0x-prefixed 64 hex character EVM transaction hash.
+ * Checks if string is a valid transaction hash for the given chain (defaults to ethereum/EVM).
  */
-export function isValidTransactionHash(hash: string): boolean {
-  return /^0x[0-9a-fA-F]{64}$/.test(hash.trim());
+export function isValidTransactionHash(hash: string, chain = 'ethereum'): boolean {
+  return isValidHashForChain(chain, hash);
 }
 
 /**
- * Checks if string is a supported EVM chain.
+ * Checks if string is a supported chain.
  */
 export function isValidChain(chain: string): chain is SupportedChain {
-  return SUPPORTED_CHAINS.some((c) => c.id === chain);
+  return isSupportedChain(chain);
 }
 
 /**
@@ -34,36 +44,62 @@ export function validateLookupInput(
     return { isValid: false, error: 'Please select a blockchain network.' };
   }
 
-  if (!isValidChain(trimmedChain)) {
+  if (!isSupportedChain(trimmedChain)) {
     return {
       isValid: false,
-      error: 'Invalid chain selected. Must be Ethereum, BNB Smart Chain, or Polygon.',
+      error: `Unsupported chain selected. Supported networks: ${ACTIVE_CHAINS.map((c) => NETWORK_REGISTRY[c].name).join(', ')}.`,
     };
   }
+
+  const config = getNetworkConfig(trimmedChain);
 
   if (!trimmedHash) {
     return { isValid: false, error: 'Transaction hash is required.' };
   }
 
-  if (!trimmedHash.startsWith('0x')) {
-    return {
-      isValid: false,
-      error: 'Transaction hash must start with "0x".',
-    };
-  }
+  if (isEvmChain(trimmedChain)) {
+    if (!trimmedHash.startsWith('0x')) {
+      return {
+        isValid: false,
+        error: 'Transaction hash must start with "0x".',
+      };
+    }
 
-  if (trimmedHash.length !== 66) {
-    return {
-      isValid: false,
-      error: `Transaction hash length is ${trimmedHash.length} chars. Must be exactly 66 characters (0x + 64 hex characters).`,
-    };
-  }
+    if (trimmedHash.length !== 66) {
+      return {
+        isValid: false,
+        error: `Transaction hash length is ${trimmedHash.length} chars. Must be exactly 66 characters (0x + 64 hex characters).`,
+      };
+    }
 
-  if (!isValidTransactionHash(trimmedHash)) {
-    return {
-      isValid: false,
-      error: 'Transaction hash contains non-hexadecimal characters.',
-    };
+    if (!isValidHashForChain(trimmedChain, trimmedHash)) {
+      return {
+        isValid: false,
+        error: 'Transaction hash contains non-hexadecimal characters.',
+      };
+    }
+  } else {
+    // UTXO family (bitcoin, litecoin, dogecoin, bitcoin-cash, dash)
+    if (trimmedHash.startsWith('0x') || trimmedHash.startsWith('0X')) {
+      return {
+        isValid: false,
+        error: `Transaction ID for ${config.name} must not start with "0x". Enter 64 hexadecimal characters.`,
+      };
+    }
+
+    if (trimmedHash.length !== 64) {
+      return {
+        isValid: false,
+        error: `Transaction ID length is ${trimmedHash.length} chars. Must be exactly 64 hexadecimal characters for ${config.name}.`,
+      };
+    }
+
+    if (!isValidHashForChain(trimmedChain, trimmedHash)) {
+      return {
+        isValid: false,
+        error: `Transaction ID for ${config.name} contains non-hexadecimal characters.`,
+      };
+    }
   }
 
   return { isValid: true };

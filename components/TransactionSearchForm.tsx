@@ -3,7 +3,11 @@
 import React, { useState } from 'react';
 import { Search, ArrowRight, Clipboard, X, Check, Loader2, Hash, AlertCircle } from 'lucide-react';
 import type { SupportedChain } from '../lib/api-types';
-import { SUPPORTED_CHAINS, truncateHashOrAddress, validateLookupInput } from '../lib/validation';
+import { truncateHashOrAddress, validateLookupInput } from '../lib/validation';
+import {
+  getNetworkConfig,
+  isSupportedChain,
+} from '../lib/network-registry';
 import { ChainSelect } from './ChainSelect';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
@@ -32,13 +36,22 @@ export function TransactionSearchForm({
   const [clientError, setClientError] = useState<string | null>(null);
   const [pastedFeedback, setPastedFeedback] = useState(false);
 
+  const activeConfig = isSupportedChain(chain)
+    ? getNetworkConfig(chain)
+    : getNetworkConfig('ethereum');
+
+  const handleChainChange = (newChain: SupportedChain) => {
+    setChain(newChain);
+    setClientError(null);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setClientError(null);
 
     const validation = validateLookupInput(chain, hash);
     if (!validation.isValid) {
-      setClientError(validation.error || 'Please enter a valid EVM transaction hash.');
+      setClientError(validation.error || 'Please enter a valid transaction hash.');
       return;
     }
 
@@ -67,19 +80,8 @@ export function TransactionSearchForm({
   };
 
   if (isCondensed && hash) {
-    const chainConfig = SUPPORTED_CHAINS.find((c) => c.id === chain) || SUPPORTED_CHAINS[0];
-    const chainBadgeClasses =
-      chain === 'ethereum'
-        ? 'border-sky-500/40 bg-sky-950/30 text-sky-200'
-        : chain === 'bsc'
-          ? 'border-amber-500/40 bg-amber-950/30 text-amber-200'
-          : 'border-violet-500/40 bg-violet-950/30 text-violet-200';
-    const chainDotClass =
-      chain === 'ethereum'
-        ? 'bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.7)]'
-        : chain === 'bsc'
-          ? 'bg-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.7)]'
-          : 'bg-violet-400 shadow-[0_0_6px_rgba(167,139,250,0.7)]';
+    const chainBadgeClasses = activeConfig.visuals.badgeClass;
+    const chainDotClass = activeConfig.visuals.dotClass;
 
     return (
       <Card className="flex flex-wrap items-center justify-between gap-3 p-3.5 sm:px-5 border-border/80 bg-card/95 backdrop-blur-sm shadow-md">
@@ -91,7 +93,7 @@ export function TransactionSearchForm({
             )}
           >
             <span className={cn('h-1.5 w-1.5 rounded-full', chainDotClass)} />
-            <span>{chainConfig.name}</span>
+            <span>{activeConfig.name}</span>
           </span>
           <span className="truncate font-mono text-xs text-foreground/90 select-all" title={hash}>
             {truncateHashOrAddress(hash, 12, 10)}
@@ -116,7 +118,7 @@ export function TransactionSearchForm({
     <Card className="p-5 sm:p-6 border-border/80 bg-card/95 backdrop-blur-sm shadow-xl">
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         {/* Network Selector */}
-        <ChainSelect value={chain} onChange={setChain} disabled={isLoading} />
+        <ChainSelect value={chain} onChange={handleChainChange} disabled={isLoading} />
 
         {/* Transaction Hash Command Input */}
         <div className="flex flex-col gap-1.5">
@@ -126,7 +128,11 @@ export function TransactionSearchForm({
               className="flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-muted-foreground font-semibold"
             >
               <Hash className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-              <span>Transaction Hash</span>
+              <span>
+                {activeConfig.family === 'utxo'
+                  ? 'Transaction ID (txid)'
+                  : 'Transaction Hash'}
+              </span>
             </label>
 
             <div className="flex items-center gap-2">
@@ -185,7 +191,7 @@ export function TransactionSearchForm({
                 setHash(e.target.value);
                 if (clientError) setClientError(null);
               }}
-              placeholder="0x..."
+              placeholder={activeConfig.hashPlaceholder}
               disabled={isLoading}
               spellCheck={false}
               autoComplete="off"
@@ -222,7 +228,11 @@ export function TransactionSearchForm({
           {isLoading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Decoding on-chain transaction...</span>
+              <span>
+                {activeConfig.family === 'utxo'
+                  ? 'Fetching UTXO ledger transaction...'
+                  : 'Decoding on-chain transaction...'}
+              </span>
             </>
           ) : (
             <>

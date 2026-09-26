@@ -1,4 +1,11 @@
-export type SupportedChain = 'ethereum' | 'bsc' | 'polygon';
+import type {
+  ActiveChain,
+  LegacyChain,
+  NetworkFamily,
+  SupportedChain,
+} from './network-registry';
+
+export type { ActiveChain, LegacyChain, NetworkFamily, SupportedChain };
 
 export type TransactionStatus = 'confirmed' | 'failed' | 'pending' | 'unknown';
 
@@ -64,28 +71,88 @@ export interface TokenApprovalItem {
   logIndex: string | number;
 }
 
+export interface NormalizedUtxoInput {
+  index: number;
+  transactionHash: string | null;
+  outputIndex: number | null;
+  value: {
+    raw: string;
+    formatted: string;
+    symbol: string;
+  };
+  address: string | null;
+  type: string | null;
+  isCoinbase: boolean;
+  scriptHex?: string | null;
+}
+
+export interface NormalizedUtxoOutput {
+  index: number;
+  value: {
+    raw: string;
+    formatted: string;
+    symbol: string;
+  };
+  address: string | null;
+  type: string | null;
+  isSpent: boolean | null;
+  scriptHex?: string | null;
+}
+
+export interface UtxoTransactionDetails {
+  version?: number;
+  size: number;
+  weight?: number;
+  vsize?: number;
+  isCoinbase: boolean;
+  confirmations: number;
+  inputCount: number;
+  outputCount: number;
+  inputTotal: {
+    raw: string;
+    formatted: string;
+    symbol: string;
+  };
+  outputTotal: {
+    raw: string;
+    formatted: string;
+    symbol: string;
+  };
+  feePerByte?: string | null;
+  inputsTruncated: boolean;
+  outputsTruncated: boolean;
+  inputs: NormalizedUtxoInput[];
+  outputs: NormalizedUtxoOutput[];
+}
+
 export interface TransactionData {
   transactionHash: string;
   chain: SupportedChain;
+  family: NetworkFamily;
   status: TransactionStatus;
-  from: string;
-  to: string | null;
-  value: TokenValue;
   fee: TokenValue;
   blockNumber: string;
   timestamp: string | null;
   explorerUrl: string;
   fetchedAt: string;
   explanation: string;
-  coverage: StoryCoverage;
-  coverageReasons: CoverageReason[];
-  actions: ActionItem[];
-  tokenTransfers: TokenTransferItem[];
-  approvals: TokenApprovalItem[];
+
+  // EVM-specific fields (present when family === 'evm')
+  from?: string;
+  to?: string | null;
+  value?: TokenValue;
+  coverage?: StoryCoverage;
+  coverageReasons?: CoverageReason[];
+  actions?: ActionItem[];
+  tokenTransfers?: TokenTransferItem[];
+  approvals?: TokenApprovalItem[];
   technical?: {
     gasUsed?: string | null;
     inputData?: string | null;
   };
+
+  // UTXO-specific fields (present when family === 'utxo')
+  utxo?: UtxoTransactionDetails;
 }
 
 export interface LookupMetadata {
@@ -161,20 +228,24 @@ export interface ChainNetworkData {
   latestBlockNumber: number | null;
   latestBlockTimestamp: number | null;
   blockDate: string | null;
-  suggestedGasPriceWei: string | null;
-  suggestedGasPriceGwei: string | null;
+  suggestedGasPriceWei?: string | null;
+  suggestedGasPriceGwei?: string | null;
+  suggestedFeeRate: string | null;
+  feeUnit: string;
   source: string;
   updatedAt: string | null;
   isStale: boolean;
   status: NetworkDataStatus;
   reason?: string | null;
   gasNote?: string | null;
+  feeRateNote?: string | null;
 }
 
 export interface NetworkOverviewItem {
   chain: SupportedChain;
   name: string;
   nativeSymbol: string;
+  family: NetworkFamily;
   coinGeckoId?: string;
   market: CoinMarketData | null;
   network: ChainNetworkData | null;

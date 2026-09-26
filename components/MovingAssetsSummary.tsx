@@ -35,7 +35,7 @@ export function MovingAssetsSummary({ data }: MovingAssetsSummaryProps) {
   const [openDetailId, setOpenDetailId] = useState<string | null>(null);
 
   const hasNativeValue =
-    Boolean(data.value?.raw) && data.value.raw !== '0' && data.value.raw !== '0x0';
+    Boolean(data.value?.raw) && data.value?.raw !== '0' && data.value?.raw !== '0x0';
   const tokenTransfers = data.tokenTransfers || [];
 
   const totalMovements = (hasNativeValue ? 1 : 0) + tokenTransfers.length;
@@ -45,7 +45,7 @@ export function MovingAssetsSummary({ data }: MovingAssetsSummaryProps) {
 
   const assetMap = new Map<string, AssetSummaryItem>();
 
-  if (hasNativeValue) {
+  if (hasNativeValue && data.value) {
     const rawVal = BigInt(data.value.raw);
     const decimals = 18;
     const exactVolume = formatUnitsToExactDecimal(rawVal, decimals);

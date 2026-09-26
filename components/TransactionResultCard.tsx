@@ -6,6 +6,7 @@ import { MovingAssetsSummary } from './MovingAssetsSummary';
 import { AssetTransfers } from './AssetTransfers';
 import { ApprovalDetails } from './ApprovalDetails';
 import { TechnicalDetails } from './TechnicalDetails';
+import { UtxoTransactionView } from './UtxoTransactionView';
 
 interface TransactionResultCardProps {
   response: TransactionLookupResponse;
@@ -20,9 +21,21 @@ export function TransactionResultCard({
 }: TransactionResultCardProps) {
   const { data, meta } = response;
 
+  // Render dedicated UTXO ledger view for Bitcoin, Litecoin, Dogecoin, Bitcoin Cash, and Dash
+  if (data.family === 'utxo' || Boolean(data.utxo)) {
+    return (
+      <UtxoTransactionView
+        response={response}
+        onRetry={onRetry}
+        isRetrying={isRetrying}
+      />
+    );
+  }
+
+  // EVM transaction handling
   const isFailed = data.status === 'failed';
   const hasNativeValue =
-    Boolean(data.value?.raw) && data.value.raw !== '0' && data.value.raw !== '0x0';
+    Boolean(data.value?.raw) && data.value?.raw !== '0' && data.value?.raw !== '0x0';
   const tokenTransfers = data.tokenTransfers || [];
   const approvals = data.approvals || [];
   const hasTransfers = hasNativeValue || tokenTransfers.length > 0;

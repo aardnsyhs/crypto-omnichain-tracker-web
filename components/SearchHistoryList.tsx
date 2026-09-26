@@ -4,6 +4,8 @@ import { useMemo } from 'react';
 import { History, RotateCcw, Clock } from 'lucide-react';
 import type { HistoryItem, SupportedChain } from '../lib/api-types';
 import { truncateHashOrAddress, formatTimestamp } from '../lib/validation';
+import { NETWORK_REGISTRY } from '../lib/network-registry';
+import { cn } from '../lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -87,32 +89,25 @@ export function SearchHistoryList({ history, isLoading, onSelect }: SearchHistor
   };
 
   const getChainBadge = (chain: string) => {
-    switch (chain.toLowerCase()) {
-      case 'ethereum':
-        return (
-          <span className="inline-flex items-center rounded-md border border-sky-500/30 bg-sky-950/40 px-2 py-0.5 font-mono text-[10px] font-semibold text-sky-300">
-            ETH
-          </span>
-        );
-      case 'bsc':
-        return (
-          <span className="inline-flex items-center rounded-md border border-amber-500/30 bg-amber-950/40 px-2 py-0.5 font-mono text-[10px] font-semibold text-amber-300">
-            BNB
-          </span>
-        );
-      case 'polygon':
-        return (
-          <span className="inline-flex items-center rounded-md border border-violet-500/30 bg-violet-950/40 px-2 py-0.5 font-mono text-[10px] font-semibold text-violet-300">
-            POL
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center rounded-md border border-border/80 bg-surface-nested px-2 py-0.5 font-mono text-[10px] font-semibold text-foreground/90">
-            {chain.toUpperCase()}
-          </span>
-        );
+    const norm = chain.toLowerCase();
+    const config = NETWORK_REGISTRY[norm as SupportedChain];
+    if (config) {
+      return (
+        <span
+          className={cn(
+            'inline-flex items-center rounded-md border px-2 py-0.5 font-mono text-[10px] font-semibold',
+            config.visuals.tickerClass,
+          )}
+        >
+          {config.nativeSymbol}
+        </span>
+      );
     }
+    return (
+      <span className="inline-flex items-center rounded-md border border-border/80 bg-surface-nested px-2 py-0.5 font-mono text-[10px] font-semibold text-foreground/90">
+        {chain.toUpperCase()}
+      </span>
+    );
   };
 
   return (
