@@ -297,12 +297,21 @@ export function UtxoTransactionView({
                   ? utxo.confirmations.toLocaleString()
                   : '0'}
               </div>
-              <div className="text-[10px] font-mono text-muted-foreground">
-                {utxo?.confirmations && utxo.confirmations >= 6
-                  ? 'High finality (6+)'
-                  : utxo?.confirmations && utxo.confirmations > 0
-                    ? 'Confirming'
-                    : 'Unconfirmed'}
+              <div
+                className="text-[10px] font-mono text-muted-foreground truncate"
+                title={
+                  utxo?.referenceBlockHeight
+                    ? `Recorded at block #${utxo.referenceBlockHeight} (Snapshot: ${formatTimestamp(data.fetchedAt)})`
+                    : undefined
+                }
+              >
+                {utxo?.referenceBlockHeight
+                  ? `@ block #${utxo.referenceBlockHeight}`
+                  : utxo?.confirmations && utxo.confirmations >= 6
+                    ? 'High finality (6+)'
+                    : utxo?.confirmations && utxo.confirmations > 0
+                      ? 'Confirming'
+                      : 'Unconfirmed'}
               </div>
             </div>
           </div>
@@ -471,9 +480,18 @@ export function UtxoTransactionView({
                             </span>
                           )}
                           {out.isSpent === false && (
-                            <span className="inline-flex items-center rounded bg-emerald-500/10 px-1.5 py-0.2 font-mono text-[10px] text-emerald-400 border border-emerald-500/30">
-                              Unspent
-                            </span>
+                            <Tooltip>
+                              <TooltipTrigger
+                                render={
+                                  <span className="inline-flex items-center rounded bg-emerald-500/10 px-1.5 py-0.2 font-mono text-[10px] text-emerald-400 border border-emerald-500/30 cursor-help">
+                                    Unspent (Snapshot)
+                                  </span>
+                                }
+                              />
+                              <TooltipContent>
+                                Output was unspent at block #{utxo?.referenceBlockHeight || data.blockNumber} (Snapshot: {formatTimestamp(data.fetchedAt)}). Use Refresh to check current mempool/spending state.
+                              </TooltipContent>
+                            </Tooltip>
                           )}
                         </div>
 
@@ -538,8 +556,12 @@ export function UtxoTransactionView({
             </span>
           </div>
 
-          <div>
-            Fetched: {formatTimestamp(data.fetchedAt)}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-[10px] text-muted-foreground/80">
+            <span>
+              Snapshot: block #{utxo?.referenceBlockHeight || data.blockNumber}
+            </span>
+            <span className="hidden sm:inline">•</span>
+            <span>Fetched: {formatTimestamp(data.fetchedAt)}</span>
           </div>
         </div>
       </section>
