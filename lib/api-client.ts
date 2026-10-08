@@ -8,181 +8,162 @@ import type {
 import { ConfigurationError, ApiClientError } from './api-errors';
 
 export const LOCAL_DEVELOPMENT_API_BASE_URL = 'http://localhost:4000';
+const sessions = new Map<string, Promise<void>>();
 
-/**
- * Validates and normalizes an API base URL without third-party dependencies.
- * - Trims whitespace
- * - Rejects empty strings
- * - Rejects malformed or non-absolute URLs
- * - Enforces http: or https: protocols
- * - Strips trailing slashes
- */
 export function normalizeAndValidateBaseUrl(rawUrl: string): string {
-  const trimmed = rawUrl.trim();
-  if (!trimmed) {
-    throw new ConfigurationError('API base URL cannot be empty.');
-  }
-
-  let parsed: URL;
+  let url: URL;
   try {
-    parsed = new URL(trimmed);
+    url = new URL(rawUrl.trim());
   } catch {
+    throw new ConfigurationError('API base URL must be an absolute HTTP or HTTPS URL.');
+  }
+  if (
+    !['http:', 'https:'].includes(url.protocol) ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash ||
+    url.pathname !== '/'
+  ) {
     throw new ConfigurationError(
-      `Invalid API base URL "${trimmed}". Must be a valid absolute URL (e.g., http://localhost:4000).`,
+      'API base URL must be an HTTP or HTTPS origin without a path or credentials.',
     );
   }
+  return url.origin;
+}
 
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    throw new ConfigurationError(
-      `Invalid API base URL protocol "${parsed.protocol}". Must be http: or https:.`,
-    );
-  }
-
-  return trimmed.replace(/\/+$/, '');
+export function isIntentionalCancellation(error: unknown): boolean {
+  return error instanceof Error && error.name === 'AbortError';
 }
 
 export class ApiClient {
   private readonly baseUrl: string;
-
-  constructor(baseUrl: string) {
+  constructor(
+    baseUrl: string,
+    private readonly timeoutMs = 45000,
+  ) {
     this.baseUrl = normalizeAndValidateBaseUrl(baseUrl);
   }
-
   public getBaseUrl(): string {
     return this.baseUrl;
   }
 
-  /**
-   * Looks up a single EVM transaction hash on the selected chain.
-   */
+  // Bootstrap once before concurrent history and lookup requests can issue competing cookies.
+  public async initializeSession(): Promise<void> {
+    let pending = sessions.get(this.baseUrl);
+    if (!pending) {
+      pending = this.request<void>('/v1/session').catch((error) => {
+        sessions.delete(this.baseUrl);
+        throw error;
+      });
+      sessions.set(this.baseUrl, pending);
+    }
+    return pending;
+  }
+
   public async lookupTransaction(
     request: TransactionLookupRequest,
+    signal?: AbortSignal,
   ): Promise<TransactionLookupResponse> {
-    const url = `${this.baseUrl}/v1/transactions/lookup`;
+    signal?.throwIfAborted();
+    await this.waitForSession(signal);
+    signal?.throwIfAborted();
+    return this.request(
+      '/v1/transactions/lookup',
+      { method: 'POST', body: JSON.stringify(request) },
+      signal,
+    );
+  }
 
-    let response: Response;
+  public async getHistory(limit = 20, signal?: AbortSignal): Promise<HistoryListResponse> {
+    signal?.throwIfAborted();
+    await this.waitForSession(signal);
+    signal?.throwIfAborted();
+    return this.request(`/v1/history?limit=${limit}`, {}, signal);
+  }
+
+  public async getOverview(signal?: AbortSignal): Promise<OverviewResponse> {
+    return this.request('/v1/overview', { credentials: 'omit' }, signal);
+  }
+
+  private async waitForSession(signal?: AbortSignal): Promise<void> {
+    if (!signal) return this.initializeSession();
+    let cancel: (() => void) | undefined;
     try {
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      };
-      if (request.refresh) {
-        headers['x-refresh'] = 'true';
+      await Promise.race([
+        this.initializeSession(),
+        new Promise<never>((_, reject) => {
+          cancel = () => reject(new DOMException('Request cancelled.', 'AbortError'));
+          signal.addEventListener('abort', cancel, { once: true });
+          if (signal.aborted) cancel();
+        }),
+      ]);
+    } finally {
+      if (cancel) signal.removeEventListener('abort', cancel);
+    }
+  }
+
+  private async request<T>(
+    path: string,
+    options: RequestInit = {},
+    externalSignal?: AbortSignal,
+  ): Promise<T> {
+    const controller = new AbortController();
+    const abort = () => controller.abort(externalSignal?.reason);
+    externalSignal?.throwIfAborted();
+    externalSignal?.addEventListener('abort', abort, { once: true });
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, this.timeoutMs);
+    try {
+      const response = await fetch(`${this.baseUrl}${path}`, {
+        credentials: 'include',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        ...options,
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        let payload: ApiErrorPayload | null = null;
+        try {
+          payload = (await response.json()) as ApiErrorPayload;
+        } catch {
+          /* Proxies may return an HTML error. */
+        }
+        const retry = response.headers.get('Retry-After');
+        throw new ApiClientError(response.status, {
+          code:
+            payload?.error?.code || (response.status === 429 ? 'RATE_LIMIT_EXCEEDED' : 'API_ERROR'),
+          message:
+            (payload?.error?.message || `Request failed (${response.status}).`) +
+            (retry && /^\d+$/.test(retry) ? ` Retry in ${retry} seconds.` : ''),
+          requestId: payload?.error?.requestId || '',
+        });
       }
-
-      response = await fetch(url, {
-        method: 'POST',
-        headers,
-        credentials: 'include',
-        body: JSON.stringify(request),
-      });
-    } catch (networkError) {
+      return response.status === 204 ? (undefined as T) : ((await response.json()) as T);
+    } catch (error) {
+      if (externalSignal?.aborted) throw new DOMException('Request cancelled.', 'AbortError');
+      if (error instanceof ApiClientError && !timedOut) throw error;
       throw new ApiClientError(0, {
-        code: 'NETWORK_ERROR',
-        message: `Unable to connect to the transaction tracking API at ${this.baseUrl}. ${(networkError as Error).message}`,
+        code: timedOut ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR',
+        message: timedOut
+          ? 'The request timed out. Please retry.'
+          : 'Unable to connect to the transaction API. Please retry.',
         requestId: '',
       });
+    } finally {
+      clearTimeout(timer);
+      externalSignal?.removeEventListener('abort', abort);
     }
-
-    if (!response.ok) {
-      await this.handleErrorResponse(response);
-    }
-
-    return (await response.json()) as TransactionLookupResponse;
-  }
-
-  /**
-   * Fetches recent search history scoped to the current anonymous session.
-   */
-  public async getHistory(limit = 20): Promise<HistoryListResponse> {
-    const url = `${this.baseUrl}/v1/history?limit=${limit}`;
-
-    let response: Response;
-    try {
-      response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-        },
-        credentials: 'include',
-      });
-    } catch (networkError) {
-      throw new ApiClientError(0, {
-        code: 'NETWORK_ERROR',
-        message: `Unable to load search history from ${this.baseUrl}. ${(networkError as Error).message}`,
-        requestId: '',
-      });
-    }
-
-    if (!response.ok) {
-      await this.handleErrorResponse(response);
-    }
-
-    return (await response.json()) as HistoryListResponse;
-  }
-
-  /**
-   * Fetches market prices, 24h changes, latest block info, and suggested gas prices
-   * across supported EVM networks.
-   */
-  public async getOverview(): Promise<OverviewResponse> {
-    const url = `${this.baseUrl}/v1/overview`;
-
-    let response: Response;
-    try {
-      response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-        },
-        credentials: 'include',
-      });
-    } catch (networkError) {
-      throw new ApiClientError(0, {
-        code: 'NETWORK_ERROR',
-        message: `Unable to load market and network overview from ${this.baseUrl}. ${(networkError as Error).message}`,
-        requestId: '',
-      });
-    }
-
-    if (!response.ok) {
-      await this.handleErrorResponse(response);
-    }
-
-    return (await response.json()) as OverviewResponse;
-  }
-
-  private async handleErrorResponse(response: Response): Promise<never> {
-    let errorDetail = {
-      code: 'API_ERROR',
-      message: `Request failed with status ${response.status}: ${response.statusText}`,
-      requestId: '',
-    };
-
-    try {
-      const errorPayload = (await response.json()) as ApiErrorPayload;
-      if (errorPayload && errorPayload.error) {
-        errorDetail = {
-          code: errorPayload.error.code || 'API_ERROR',
-          message: errorPayload.error.message || errorDetail.message,
-          requestId: errorPayload.error.requestId || '',
-        };
-      }
-    } catch {
-      // Response body was not JSON; use default status message
-    }
-
-    throw new ApiClientError(response.status, errorDetail);
   }
 }
 
-/**
- * Factory function creating an ApiClient instance.
- * Reads process.env.NEXT_PUBLIC_API_BASE_URL with fallback to LOCAL_DEVELOPMENT_API_BASE_URL.
- */
 export function createApiClient(customBaseUrl?: string): ApiClient {
-  const resolvedUrl =
-    customBaseUrl ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? LOCAL_DEVELOPMENT_API_BASE_URL;
-
-  return new ApiClient(resolvedUrl);
+  const configured = customBaseUrl ?? process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (!configured && process.env.NODE_ENV === 'production')
+    throw new ConfigurationError(
+      'NEXT_PUBLIC_API_BASE_URL must be configured before the production build.',
+    );
+  return new ApiClient(configured ?? LOCAL_DEVELOPMENT_API_BASE_URL);
 }

@@ -16,7 +16,7 @@ export function LoadingState() {
         <div className="flex items-center gap-2.5">
           <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
           <span className="font-sans text-xs font-semibold text-foreground">
-            Decoding on-chain transaction logs...
+            Loading transaction details from the selected network...
           </span>
         </div>
         <Skeleton className="h-5 w-24 rounded-full" />

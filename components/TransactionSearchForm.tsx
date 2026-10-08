@@ -4,10 +4,7 @@ import React, { useState } from 'react';
 import { Search, ArrowRight, Clipboard, X, Check, Loader2, Hash, AlertCircle } from 'lucide-react';
 import type { SupportedChain } from '../lib/api-types';
 import { truncateHashOrAddress, validateLookupInput } from '../lib/validation';
-import {
-  getNetworkConfig,
-  isSupportedChain,
-} from '../lib/network-registry';
+import { getNetworkConfig, isSupportedChain } from '../lib/network-registry';
 import { ChainSelect } from './ChainSelect';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
@@ -129,9 +126,7 @@ export function TransactionSearchForm({
             >
               <Hash className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
               <span>
-                {activeConfig.family === 'utxo'
-                  ? 'Transaction ID (txid)'
-                  : 'Transaction Hash'}
+                {activeConfig.family === 'utxo' ? 'Transaction ID (txid)' : 'Transaction Hash'}
               </span>
             </label>
 
@@ -196,7 +191,7 @@ export function TransactionSearchForm({
               spellCheck={false}
               autoComplete="off"
               className={cn(
-                'w-full rounded-lg border bg-surface-nested px-4 py-3 font-mono text-sm text-foreground placeholder:text-muted-foreground/60 transition-all focus:outline-none focus:ring-2',
+                'w-full rounded-lg border bg-surface-nested px-4 py-3 font-mono text-sm text-foreground placeholder:text-muted-foreground transition-all focus:outline-none focus:ring-2',
                 clientError
                   ? 'border-destructive/80 focus:border-destructive focus:ring-destructive/30 shadow-[0_0_12px_rgba(244,63,94,0.15)]'
                   : 'border-border/80 focus:border-primary focus:ring-ring/40 hover:border-border',

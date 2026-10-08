@@ -14,10 +14,18 @@ import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 interface SearchHistoryListProps {
   history: HistoryItem[];
   isLoading: boolean;
+  error?: string | null;
+  onRetry?: () => void;
   onSelect: (chain: SupportedChain, transactionHash: string) => void;
 }
 
-export function SearchHistoryList({ history, isLoading, onSelect }: SearchHistoryListProps) {
+export function SearchHistoryList({
+  history,
+  isLoading,
+  onSelect,
+  error,
+  onRetry,
+}: SearchHistoryListProps) {
   // Deduplicate history items by chain + transactionHash, preserving the most recent record
   const dedupedHistory = useMemo(() => {
     const seen = new Set<string>();
@@ -122,23 +130,31 @@ export function SearchHistoryList({ history, isLoading, onSelect }: SearchHistor
         <span className="font-mono text-xs text-muted-foreground">
           {dedupedHistory.length} {dedupedHistory.length === 1 ? 'transaction' : 'transactions'}
           {history.length > dedupedHistory.length && (
-            <span className="text-muted-foreground/70 ml-1">({history.length} searches)</span>
+            <span className="text-muted-foreground ml-1">({history.length} searches)</span>
           )}
         </span>
       </CardHeader>
 
       <CardContent className="p-0">
+        {error && (
+          <div role="status" className="p-4 text-sm text-foreground">
+            <p>{error}</p>
+            <Button onClick={onRetry} variant="outline">
+              Retry history
+            </Button>
+          </div>
+        )}
         {isLoading && dedupedHistory.length === 0 ? (
           <div className="py-8 text-center font-sans text-xs text-muted-foreground animate-pulse">
             Loading search history...
           </div>
-        ) : dedupedHistory.length === 0 ? (
+        ) : dedupedHistory.length === 0 && !error ? (
           <div className="py-8 text-center px-4">
             <Clock className="h-6 w-6 text-muted-foreground/50 mx-auto mb-2" />
             <p className="font-sans text-xs text-muted-foreground font-medium">
               No transactions searched yet in this session.
             </p>
-            <p className="mt-1 font-sans text-[11px] text-muted-foreground/70">
+            <p className="mt-1 font-sans text-[11px] text-muted-foreground">
               Searches performed will automatically appear here.
             </p>
           </div>
@@ -170,7 +186,7 @@ export function SearchHistoryList({ history, isLoading, onSelect }: SearchHistor
 
                 <div className="flex items-center justify-between gap-3 sm:justify-end min-w-0">
                   <span
-                    className="font-mono text-[11px] text-muted-foreground/70 truncate"
+                    className="font-mono text-[11px] text-muted-foreground truncate"
                     title={item.searchedAt}
                   >
                     {formatTimestamp(item.searchedAt)}

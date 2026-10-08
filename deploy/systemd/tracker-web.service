@@ -1,0 +1,30 @@
+[Unit]
+Description=Transaction Story Explorer web
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=tracker
+Group=tracker
+WorkingDirectory=/srv/tracker/web/current
+EnvironmentFile=/etc/tracker/web.env
+ExecStart=/usr/bin/node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3000
+Restart=on-failure
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=55
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/srv/tracker/web/current/.next/cache
+UMask=0077
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tracker-web
+
+[Install]
+WantedBy=multi-user.target

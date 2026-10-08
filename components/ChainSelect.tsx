@@ -56,7 +56,7 @@ export function ChainSelect({ value, onChange, disabled = false }: ChainSelectPr
           <span>Select Network</span>
         </label>
         <Badge variant="outline" className="font-mono text-[10px] text-muted-foreground">
-          6 Active Networks
+          {ACTIVE_CHAINS.length} Active Networks
         </Badge>
       </div>
 
@@ -67,6 +67,8 @@ export function ChainSelect({ value, onChange, disabled = false }: ChainSelectPr
         onChange={(e) => onChange(e.target.value as SupportedChain)}
         disabled={disabled}
         className="sr-only"
+        tabIndex={-1}
+        aria-hidden="true"
         aria-label="Blockchain Network"
       >
         {ALL_SUPPORTED_CHAINS.map((chain) => {
@@ -99,6 +101,24 @@ export function ChainSelect({ value, onChange, disabled = false }: ChainSelectPr
               type="button"
               role="radio"
               aria-checked={isSelected}
+              tabIndex={isSelected ? 0 : -1}
+              onKeyDown={(event) => {
+                const delta = ['ArrowRight', 'ArrowDown'].includes(event.key)
+                  ? 1
+                  : ['ArrowLeft', 'ArrowUp'].includes(event.key)
+                    ? -1
+                    : 0;
+                if (!delta || disabled) return;
+                event.preventDefault();
+                const index = displayedChains.indexOf(chain);
+                const next = (index + delta + displayedChains.length) % displayedChains.length;
+                onChange(displayedChains[next]);
+                const buttons =
+                  event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>(
+                    '[role="radio"]',
+                  );
+                buttons?.[next]?.focus();
+              }}
               onClick={() => !disabled && onChange(chain)}
               disabled={disabled}
               className={cn(
@@ -123,7 +143,9 @@ export function ChainSelect({ value, onChange, disabled = false }: ChainSelectPr
               <IconComponent
                 className={cn(
                   'h-3.5 w-3.5 shrink-0 transition-colors',
-                  isSelected ? visuals.iconClass : 'text-muted-foreground group-hover:text-foreground',
+                  isSelected
+                    ? visuals.iconClass
+                    : 'text-muted-foreground group-hover:text-foreground',
                 )}
                 aria-hidden="true"
               />

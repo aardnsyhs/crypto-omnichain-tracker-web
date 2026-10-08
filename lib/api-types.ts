@@ -216,6 +216,8 @@ export type MarketDataStatus = 'available' | 'stale' | 'rate_limited' | 'unavail
 export type NetworkDataStatus = 'available' | 'stale' | 'unavailable';
 
 export interface CoinMarketData {
+  fieldUpdatedAt?: Record<string, string>;
+  staleFields?: string[];
   priceUsd: number | null;
   change24h: number | null;
   source: string;
@@ -226,6 +228,8 @@ export interface CoinMarketData {
 }
 
 export interface ChainNetworkData {
+  fieldUpdatedAt?: Record<string, string>;
+  staleFields?: string[];
   latestBlockNumber: number | null;
   latestBlockTimestamp: number | null;
   blockDate: string | null;
@@ -257,5 +261,7 @@ export interface OverviewResponse {
   meta: {
     fetchedAt: string;
     cached: boolean;
+    isRateLimited?: boolean;
+    providerStatus?: number;
   };
 }

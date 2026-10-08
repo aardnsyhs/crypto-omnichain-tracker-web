@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import type { SupportedChain, TransactionLookupResponse, HistoryItem } from '../lib/api-types';
 import { ApiClientError } from '../lib/api-errors';
-import { createApiClient } from '../lib/api-client';
+import { createApiClient, isIntentionalCancellation } from '../lib/api-client';
+import { ACTIVE_CHAINS } from '../lib/network-registry';
 import { isValidChain, isValidTransactionHash } from '../lib/validation';
 import { TransactionSearchForm } from '../components/TransactionSearchForm';
 import { MarketNetworkOverview } from '../components/MarketNetworkOverview';
@@ -25,6 +26,8 @@ export default function HomePage() {
 
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState<boolean>(true);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const lookupController = useRef<AbortController | null>(null);
 
   // Monotonic search counter to prevent out-of-order race conditions
   const latestSearchIdRef = useRef<number>(0);
@@ -34,8 +37,9 @@ export default function HomePage() {
     try {
       const res = await apiClient.getHistory(20);
       setHistory(res.data);
+      setHistoryError(null);
     } catch {
-      // Degrade gracefully if history cannot be loaded
+      setHistoryError('Search history could not be loaded. Retry to check this session.');
     } finally {
       setIsHistoryLoading(false);
     }
@@ -47,6 +51,9 @@ export default function HomePage() {
   const executeLookup = useCallback(
     async (chain: SupportedChain, hash: string, isRefresh = false) => {
       const searchId = ++latestSearchIdRef.current;
+      lookupController.current?.abort();
+      const controller = new AbortController();
+      lookupController.current = controller;
 
       setSelectedChain(chain);
       setTransactionHash(hash);
@@ -68,11 +75,14 @@ export default function HomePage() {
       }
 
       try {
-        const response = await apiClient.lookupTransaction({
-          chain,
-          transactionHash: hash,
-          refresh: isRefresh,
-        });
+        const response = await apiClient.lookupTransaction(
+          {
+            chain,
+            transactionHash: hash,
+            refresh: isRefresh,
+          },
+          controller.signal,
+        );
 
         // Discard result if a newer search was initiated
         if (searchId !== latestSearchIdRef.current) {
@@ -83,6 +93,7 @@ export default function HomePage() {
         setIsFormCondensed(true);
         setError(null);
       } catch (err) {
+        if (isIntentionalCancellation(err)) return;
         if (searchId !== latestSearchIdRef.current) {
           return;
         }
@@ -93,7 +104,7 @@ export default function HomePage() {
           setIsRetrying(false);
         }
         // Refresh session history to reflect current lookup
-        void fetchHistory();
+        if (!controller.signal.aborted) void fetchHistory();
       }
     },
     [apiClient, fetchHistory],
@@ -114,11 +125,13 @@ export default function HomePage() {
       .then((res) => {
         if (!ignore) {
           setHistory(res.data);
+          setHistoryError(null);
           setIsHistoryLoading(false);
         }
       })
       .catch(() => {
         if (!ignore) {
+          setHistoryError('Search history could not be loaded. Retry to check this session.');
           setIsHistoryLoading(false);
         }
       });
@@ -128,13 +141,27 @@ export default function HomePage() {
       const chainParam = params.get('chain');
       const txParam = params.get('tx') || params.get('hash');
 
-      if (chainParam && isValidChain(chainParam) && txParam && isValidTransactionHash(txParam, chainParam)) {
+      if (
+        chainParam &&
+        isValidChain(chainParam) &&
+        txParam &&
+        isValidTransactionHash(txParam, chainParam)
+      ) {
         const chain = chainParam as SupportedChain;
         const hash = txParam;
         const searchId = ++latestSearchIdRef.current;
+        const controller = new AbortController();
+        lookupController.current = controller;
+        queueMicrotask(() => {
+          if (!ignore) {
+            setSelectedChain(chain);
+            setTransactionHash(hash);
+            setIsLoading(true);
+          }
+        });
 
         apiClient
-          .lookupTransaction({ chain, transactionHash: hash })
+          .lookupTransaction({ chain, transactionHash: hash }, controller.signal)
           .then((response) => {
             if (!ignore && searchId === latestSearchIdRef.current) {
               setSelectedChain(chain);
@@ -147,6 +174,7 @@ export default function HomePage() {
             }
           })
           .catch((err: unknown) => {
+            if (isIntentionalCancellation(err)) return;
             if (!ignore && searchId === latestSearchIdRef.current) {
               setSelectedChain(chain);
               setTransactionHash(hash);
@@ -160,6 +188,7 @@ export default function HomePage() {
 
     return () => {
       ignore = true;
+      lookupController.current?.abort();
     };
   }, [apiClient, fetchHistory]);
 
@@ -175,26 +204,24 @@ export default function HomePage() {
         {/* Header: Compact forensic hero, hidden when an active result is displayed */}
         {!result && (
           <header className="flex flex-col items-center text-center pt-2 sm:pt-4">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-border/80 bg-surface-elevated/80 px-3.5 py-1 text-xs text-muted-foreground shadow-sm backdrop-blur-md">
+            <div className="mb-3 inline-flex max-w-full flex-wrap justify-center items-center gap-2 rounded-full border border-border/80 bg-surface-elevated/80 px-3.5 py-1 text-xs text-muted-foreground shadow-sm backdrop-blur-md">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]" />
               </span>
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" aria-hidden="true" />
-              <span className="font-sans font-medium text-foreground">
-                Omnichain Investigative Ledger
-              </span>
+              <span className="font-sans font-medium text-foreground">Investigative Ledger</span>
               <span className="h-3 w-px bg-border/80" />
               <span className="font-mono text-[11px] text-muted-foreground">
-                Live data • 6 networks • Verified decoding & UTXO ledger
+                {ACTIVE_CHAINS.length} networks • EVM decoding & UTXO ledger
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-foreground font-sans">
               Transaction Story Explorer
             </h1>
             <p className="mt-2 max-w-lg text-xs sm:text-sm text-muted-foreground leading-relaxed font-sans">
-              Investigate transaction intent, UTXO flows, token movements, and approval allowances
-              across 6 supported networks with verified on-chain data.
+              Inspect a transaction on its network: UTXO inputs and outputs, token transfers, and
+              approval allowances across {ACTIVE_CHAINS.length} supported networks.
             </p>
           </header>
         )}
@@ -229,13 +256,13 @@ export default function HomePage() {
         <MarketNetworkOverview apiClient={apiClient} isVisible={!result} />
 
         {/* Interactive Lookup State: Loading / Result / Error */}
-        <section aria-label="Lookup Results">
+        <section aria-label="Lookup Results" aria-live="polite" aria-busy={isLoading || isRetrying}>
           {isLoading && <LoadingState />}
 
           {!isLoading && error && (
             <LookupErrorState
               error={error}
-              onRetry={() => void executeLookup(selectedChain, transactionHash)}
+              onRetry={() => void executeLookup(selectedChain, transactionHash, Boolean(result))}
             />
           )}
 
@@ -252,12 +279,14 @@ export default function HomePage() {
         <SearchHistoryList
           history={history}
           isLoading={isHistoryLoading}
+          error={historyError}
+          onRetry={() => void fetchHistory()}
           onSelect={(chain, hash) => void executeLookup(chain, hash)}
         />
 
         {/* Footer */}
         <footer className="mt-8 border-t border-border/60 pt-6 text-center text-xs text-muted-foreground font-sans">
-          <p>Omnichain Transaction Story Explorer • Multi-chain verified EVM ledger</p>
+          <p>Transaction Story Explorer • Per-network EVM and UTXO transaction lookup</p>
         </footer>
       </div>
     </main>

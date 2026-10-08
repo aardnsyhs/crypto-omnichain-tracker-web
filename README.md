@@ -1,51 +1,19 @@
-# Crypto Omnichain Transaction Tracker — Web
+# Transaction Story Explorer web
 
-Frontend web application for **Crypto Omnichain Transaction Tracker**, built with Next.js (App Router), React 19, TypeScript strict mode, and Tailwind CSS.
+Next.js frontend for individual transaction lookup, with an Investigative Ledger result presentation. Active networks: Ethereum, Bitcoin, Litecoin, Dogecoin, Bitcoin Cash, and Dash. BSC and Polygon deep links/history remain legacy-compatible; they are not active overview networks. The product does not trace cross-chain journeys.
 
-## Features & User Experience
+Use Node 24 LTS and npm. Local development:
 
-- **Transaction Story Overview:** Narrative explanation of transaction outcomes, execution status, and coverage indicators.
-- **Asset Transfers:** Clean breakdown of native transfers and ERC-20 token movements with origin and destination addresses.
-- **Token Approvals:** Visual allowances card displaying maximum allowance (unlimited) or finite amounts, alongside a historical scope disclaimer.
-- **Technical Ledger:** Collapsible accordion containing proof details, native transaction value, gas fee breakdown, calldata input, and external block explorer links.
-- **Deduplicated History:** Clean session search history deduplicated by chain and transaction hash with execution-aware badges (`Confirmed`, `Failed`, `Pending`, `Unknown`).
-- **Deep Linking & Sharing:** Share button with clipboard copy feedback and URL parameter synchronization (`?chain=...&tx=...`).
-- **Race Condition Protection:** Monotonic request sequence tracking prevents out-of-order asynchronous responses from overwriting newer searches.
+```sh
+cp .env.example .env
+npm ci --ignore-scripts
+npm run dev
+```
 
-## Prerequisites
+Local API default: `http://localhost:4000`. Production requires `NEXT_PUBLIC_API_BASE_URL=https://api.ardiansyah.app` **before** `npm run build`. Set it in the build environment and service environment. Missing production configuration fails explicitly. Use `.env.production.example` as a starting point.
 
-- Node.js >= 20.0.0
-- npm >= 10.0.0
+Verification: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`. Tests use mocked fetch and do not require paid providers. Browser verification is not part of this implementation pass. The production build uses the existing Google Fonts integration and requires network access to fetch fonts.
 
-## Setup and Development
+Requests have a 45-second deadline and support cancellation. Initial history and deep-linked lookup requests await one signed-session bootstrap. Obsolete lookups are cancelled and out-of-order responses ignored. Partial-data retries keep the useful result visible. Overview polling runs every 60 seconds while the view and tab are visible, with no overlapping requests. Preserved provider values are explicitly stale and retain source timestamps.
 
-1. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-
-2. Configure environment:
-
-   ```bash
-   cp .env.example .env.local
-   ```
-
-3. Run development server:
-   ```bash
-   npm run dev
-   ```
-   Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-## Available Scripts
-
-- `npm run dev` — Start the local Next.js development server
-- `npm run build` — Compile production bundle
-- `npm run start` — Run production server
-- `npm run lint` — Run ESLint check
-- `npm run format` — Format code with Prettier
-- `npm run typecheck` — Run TypeScript type checking (`tsc --noEmit`)
-
-## Documentation
-
-- API Contract Reference: [docs/api-contract-reference.md](docs/api-contract-reference.md)
+See [API contract](docs/api-contract-reference.md) and [verification record](docs/VERIFICATION.md). The service template is `deploy/systemd/tracker-web.service`. The shared VPS runbook and both Nginx virtual hosts live in the sibling backend repository: `crypto-omnichain-tracker-api/docs/DEPLOYMENT.md` and `crypto-omnichain-tracker-api/deploy/nginx/`.

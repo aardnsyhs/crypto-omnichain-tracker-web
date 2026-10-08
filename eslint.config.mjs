@@ -7,5 +7,6 @@ export default defineConfig([
   ...nextVitals,
   ...nextTs,
   prettier,
-  globalIgnores(['.next/**', 'out/**', 'build/**', 'next-env.d.ts']),
+  globalIgnores(['.next/**', '.test-build/**', 'out/**', 'build/**', 'next-env.d.ts']),
+  { files: ['test/*.cjs', 'scripts/*.cjs'], rules: { '@typescript-eslint/no-require-imports': 'off' } },
 ]);

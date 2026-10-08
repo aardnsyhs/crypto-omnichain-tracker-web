@@ -8,9 +8,9 @@ const geist = Geist({ subsets: ['latin'], variable: '--font-sans' });
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-mono' });
 
 export const metadata: Metadata = {
-  title: 'Transaction Story Explorer | EVM Omnichain Investigative Ledger',
+  title: 'Transaction Story Explorer | Investigative Ledger',
   description:
-    'Investigate transaction intent, token movements, and approval allowances across EVM chains with verified on-chain decoding.',
+    'Inspect individual Ethereum, Bitcoin, Litecoin, Dogecoin, Bitcoin Cash, and Dash transactions, including EVM transfers, approvals, and UTXO inputs and outputs.',
 };
 
 export default function RootLayout({

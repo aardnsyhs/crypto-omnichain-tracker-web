@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "types": ["node"],
+    "rootDir": "lib",
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "ignoreDeprecations": "6.0",
+    "outDir": ".test-build",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true
+  },
+  "include": [
+    "lib/api-client.ts",
+    "lib/api-types.ts",
+    "lib/api-errors.ts",
+    "lib/network-registry.ts",
+    "lib/validation.ts"
+  ]
+}

@@ -1,98 +1,20 @@
-# Canonical API Contract Reference
+# Transaction Story Explorer API contract
 
-**Repository:** `crypto-omnichain-tracker-web` (Mirror of canonical backend contract)  
-**Contract Version:** 1.1.0  
-**Ownership:** Backend (`crypto-omnichain-tracker-api`) owns the canonical specification.  
-**Implementation Status:** Active — Transaction Story (ERC-20 transfers, approvals, deterministic narrative, and status reconciliation).
+API origin: `NEXT_PUBLIC_API_BASE_URL`; routes include their own `/v1` prefix. Use HTTPS in production and `credentials: include` for session/history/lookup requests. Overview omits credentials.
 
----
+Active registry: Ethereum, Bitcoin, Litecoin, Dogecoin, Bitcoin Cash, Dash. BSC and Polygon remain legacy-compatible for lookup and existing links/history. A lookup stays on the selected network; it does not trace a cross-chain journey.
 
-## 1. Migration & Evolution Notes (v1.0.0 -> v1.1.0)
+| Endpoint | Contract |
+| --- | --- |
+| `GET /v1/session` | HTTP 204; initialize or renew signed anonymous cookie before concurrent history/lookup |
+| `POST /v1/transactions/lookup` | `{ chain, transactionHash, refresh? }` returns `{ data, meta: { requestId, cache: { hit } } }` |
+| `GET /v1/history?limit=20` | `{ data }` scoped to the signed cookie |
+| `GET /v1/overview` | `{ data, meta }`, six active networks, no session |
+| `GET /health/live` | Process liveness; no providers |
+| `GET /health/ready` | HTTP 200 ready/degraded, HTTP 503 when PostgreSQL is unavailable |
 
-> [!WARNING]
-> **Consumer Changes:**
->
-> 1. **Nullable Timestamp:** `data.timestamp` is typed as `string | null`.
-> 2. **Status 'unknown':** `data.status` includes `'unknown'` alongside `'confirmed'`, `'failed'`, and `'pending'`.
-> 3. **Search History Separation:** In `GET /v1/history`, `txStatus` is introduced as `'confirmed' | 'failed' | 'pending' | 'unknown'`. Older history records default to `'unknown'`.
-> 4. **Token Metadata Fallback:** When token metadata calls fail or non-standard tokens omit standard methods, `tokenTransfers[].symbol`, `tokenTransfers[].decimals`, `approvals[].symbol`, and `approvals[].decimals` are returned as `null`. Consumers must handle `null` values gracefully and fall back to raw amounts or token address labels.
+EVM hashes: `0x` plus 64 hexadecimal characters. UTXO hashes: 64 hexadecimal characters without the prefix. Result families are `evm` and `utxo`; EVM includes story, transfers, approvals, coverage and technical details. UTXO includes exact value strings, inputs/outputs, confirmation snapshot and fee information. Pending, unknown, failed and confirmed statuses remain distinct.
 
----
+Overview sections expose `updatedAt`, `isStale`, `status`, and nullable values. Additive `fieldUpdatedAt` and `staleFields` preserve field-specific ages. `updatedAt` is the oldest valid value in the section. A null price/fee/change is unavailable, not zero. Additive metadata includes `isRateLimited` and `providerStatus` for quota errors (402/429). Freshness is 60 seconds, maximum age is 300 seconds from original collection. Frontend polling is every 60 seconds in a visible view/tab.
 
-## 2. Supported EVM Chains
-
-| Enum Value | Network Name     | Native Symbol | Expected Chain ID |
-| :--------- | :--------------- | :------------ | :---------------- |
-| `ethereum` | Ethereum Mainnet | ETH           | 1 (`0x1`)         |
-| `bsc`      | BNB Smart Chain  | BNB           | 56 (`0x38`)       |
-| `polygon`  | Polygon PoS      | POL (MATIC)   | 137 (`0x89`)      |
-
----
-
-## 3. Transaction Lookup Endpoint
-
-### `POST /v1/transactions/lookup`
-
-```json
-{
-  "data": {
-    "transactionHash": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-    "chain": "ethereum",
-    "status": "confirmed",
-    "from": "0x1234567890abcdef1234567890abcdef12345678",
-    "to": "0xabcdef1234567890abcdef1234567890abcdef12",
-    "value": {
-      "raw": "1500000000000000000",
-      "formatted": "1.5",
-      "symbol": "ETH"
-    },
-    "fee": {
-      "raw": "2100000000000000",
-      "formatted": "0.0021",
-      "symbol": "ETH"
-    },
-    "blockNumber": "12345678",
-    "timestamp": "2026-09-06T05:00:00.000Z",
-    "explorerUrl": "https://etherscan.io/tx/0x0123...",
-    "fetchedAt": "2026-09-23T14:40:00.000Z",
-    "explanation": "Transferred 1.5 ETH from 0x1234... to 0xabcd....",
-    "coverage": "complete",
-    "coverageReasons": [],
-    "actions": [],
-    "tokenTransfers": [],
-    "approvals": []
-  },
-  "meta": {
-    "requestId": "c1f516d0-a35b-4c27-91fa-bf1447dbb13b",
-    "cache": {
-      "hit": false
-    }
-  }
-}
-```
-
----
-
-## 4. History Endpoint
-
-### `GET /v1/history`
-
-```json
-{
-  "data": [
-    {
-      "id": "123e4567-e89b-12d3-a456-426614174001",
-      "transactionHash": "0x0123...",
-      "chain": "ethereum",
-      "outcome": "success",
-      "txStatus": "confirmed",
-      "cacheHit": true,
-      "searchedAt": "2026-09-23T14:40:00.000Z"
-    }
-  ],
-  "meta": {
-    "total": 1,
-    "sessionId": "a8f5..."
-  }
-}
-```
+Errors: `{ error: { code, message, requestId } }`. HTTP 429 includes `Retry-After`; refresh has a 15-second cooldown. Provider quota errors map to `UPSTREAM_RATE_LIMITED`/503. Intentional client cancellation is distinct from timeout/network errors. The client has a 45-second total deadline.

@@ -145,7 +145,9 @@ export function UtxoTransactionView({
                       </Button>
                     }
                   />
-                  <TooltipContent>Re-fetch latest status and confirmations from node</TooltipContent>
+                  <TooltipContent>
+                    Re-fetch latest status and confirmations from node
+                  </TooltipContent>
                 </Tooltip>
               )}
 
@@ -165,9 +167,7 @@ export function UtxoTransactionView({
                       ) : (
                         <Share2 className="h-3.5 w-3.5" />
                       )}
-                      <span className="hidden sm:inline">
-                        {copiedShare ? 'Copied' : 'Share'}
-                      </span>
+                      <span className="hidden sm:inline">{copiedShare ? 'Copied' : 'Share'}</span>
                     </Button>
                   }
                 />
@@ -293,9 +293,7 @@ export function UtxoTransactionView({
             </span>
             <div className="mt-1.5">
               <div className="font-mono text-sm sm:text-base font-bold text-emerald-400 tabular-nums">
-                {utxo?.confirmations !== undefined
-                  ? utxo.confirmations.toLocaleString()
-                  : '0'}
+                {utxo?.confirmations !== undefined ? utxo.confirmations.toLocaleString() : '0'}
               </div>
               <div
                 className="text-[10px] font-mono text-muted-foreground truncate"
@@ -324,10 +322,10 @@ export function UtxoTransactionView({
             </span>
             <div className="mt-1.5">
               <div className="font-mono text-sm sm:text-base font-bold text-foreground tabular-nums">
-                {utxo?.size ? `${utxo.size.toLocaleString()} B` : '—'}
+                {utxo?.size ? `${utxo.size.toLocaleString()} B` : 'Unavailable'}
               </div>
               <div className="text-[10px] font-mono text-muted-foreground truncate">
-                {utxo?.feePerByte ? `${utxo.feePerByte} sat/B` : '—'}
+                {utxo?.feePerByte ? `${utxo.feePerByte} sat/B` : 'Unavailable'}
                 {utxo?.vsize ? ` (${utxo.vsize} vB)` : ''}
               </div>
             </div>
@@ -356,10 +354,13 @@ export function UtxoTransactionView({
           <div className="flex items-center gap-2.5 text-xs text-amber-200 font-sans">
             <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
             <div>
-              <span className="font-semibold">Provider truncation notice:</span> This transaction contains a high volume of inputs or outputs.
-              {utxo.inputsTruncated && ` Showing top ${utxo.inputs.length} of ${utxo.inputCount} inputs.`}
-              {utxo.outputsTruncated && ` Showing top ${utxo.outputs.length} of ${utxo.outputCount} outputs.`}
-              {' '}Full list is available on the blockchain explorer.
+              <span className="font-semibold">Provider truncation notice:</span> This transaction
+              contains a high volume of inputs or outputs.
+              {utxo.inputsTruncated &&
+                ` Showing top ${utxo.inputs.length} of ${utxo.inputCount} inputs.`}
+              {utxo.outputsTruncated &&
+                ` Showing top ${utxo.outputs.length} of ${utxo.outputCount} outputs.`}{' '}
+              Full list is available on the blockchain explorer.
             </div>
           </div>
         </section>
@@ -384,7 +385,8 @@ export function UtxoTransactionView({
 
             {utxo?.isCoinbase && (!utxo.inputs || utxo.inputs.length === 0) ? (
               <div className="rounded-lg border border-amber-500/20 bg-amber-950/20 p-4 text-xs font-mono text-amber-300/90 leading-relaxed">
-                Coinbase Transaction: Newly generated coins minted by the block miner/validator. No previous inputs consumed.
+                Coinbase Transaction: Newly generated coins minted by the block miner/validator. No
+                previous inputs consumed.
               </div>
             ) : !utxo?.inputs || utxo.inputs.length === 0 ? (
               <div className="py-6 text-center text-xs font-mono text-muted-foreground">
@@ -409,23 +411,34 @@ export function UtxoTransactionView({
                       </div>
 
                       <div className="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground truncate select-all">
-                        <span className="shrink-0 text-muted-foreground/60">From:</span>
+                        <span className="shrink-0 text-muted-foreground">From:</span>
                         {inp.isCoinbase ? (
-                          <span className="text-amber-300 font-semibold">Coinbase / Newly Minted</span>
+                          <span className="text-amber-300 font-semibold">
+                            Coinbase / Newly Minted
+                          </span>
                         ) : inp.address ? (
-                          <span className="truncate text-foreground/90 font-medium" title={inp.address}>
+                          <span
+                            className="truncate text-foreground/90 font-medium"
+                            title={inp.address}
+                          >
                             {inp.address}
                           </span>
                         ) : (
-                          <span className="text-muted-foreground italic">Unknown address / script</span>
+                          <span className="text-muted-foreground italic">
+                            Unknown address / script
+                          </span>
                         )}
                       </div>
 
                       {inp.transactionHash && (
-                        <div className="flex items-center gap-1 font-mono text-[10px] text-muted-foreground/70 truncate">
+                        <div className="flex items-center gap-1 font-mono text-[10px] text-muted-foreground truncate">
                           <span className="shrink-0">Prev:</span>
-                          <span className="truncate select-all" title={`${inp.transactionHash}:${inp.outputIndex}`}>
-                            {truncateHashOrAddress(inp.transactionHash, 8, 6)}:{inp.outputIndex ?? 0}
+                          <span
+                            className="truncate select-all"
+                            title={`${inp.transactionHash}:${inp.outputIndex}`}
+                          >
+                            {truncateHashOrAddress(inp.transactionHash, 8, 6)}:
+                            {inp.outputIndex ?? 0}
                           </span>
                         </div>
                       )}
@@ -489,7 +502,10 @@ export function UtxoTransactionView({
                                 }
                               />
                               <TooltipContent>
-                                Output was unspent at block #{utxo?.referenceBlockHeight || data.blockNumber} (Snapshot: {formatTimestamp(data.fetchedAt)}). Use Refresh to check current mempool/spending state.
+                                Output was unspent at block #
+                                {utxo?.referenceBlockHeight || data.blockNumber} (Snapshot:{' '}
+                                {formatTimestamp(data.fetchedAt)}). Use Refresh to check current
+                                mempool/spending state.
                               </TooltipContent>
                             </Tooltip>
                           )}
@@ -501,22 +517,30 @@ export function UtxoTransactionView({
                       </div>
 
                       <div className="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground truncate select-all">
-                        <span className="shrink-0 text-muted-foreground/60">To:</span>
+                        <span className="shrink-0 text-muted-foreground">To:</span>
                         {isOpReturn ? (
-                          <span className="text-violet-300 font-semibold" title={out.scriptHex || 'OP_RETURN'}>
+                          <span
+                            className="text-violet-300 font-semibold"
+                            title={out.scriptHex || 'OP_RETURN'}
+                          >
                             OP_RETURN (Null Data Script)
                           </span>
                         ) : out.address ? (
-                          <span className="truncate text-foreground/90 font-medium" title={out.address}>
+                          <span
+                            className="truncate text-foreground/90 font-medium"
+                            title={out.address}
+                          >
                             {out.address}
                           </span>
                         ) : (
-                          <span className="text-muted-foreground italic">Non-standard output script</span>
+                          <span className="text-muted-foreground italic">
+                            Non-standard output script
+                          </span>
                         )}
                       </div>
 
                       {out.type && (
-                        <div className="text-[10px] font-mono text-muted-foreground/60">
+                        <div className="text-[10px] font-mono text-muted-foreground">
                           Script type: {out.type}
                         </div>
                       )}
@@ -557,9 +581,7 @@ export function UtxoTransactionView({
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-[10px] text-muted-foreground/80">
-            <span>
-              Snapshot: block #{utxo?.referenceBlockHeight || data.blockNumber}
-            </span>
+            <span>Snapshot: block #{utxo?.referenceBlockHeight || data.blockNumber}</span>
             <span className="hidden sm:inline">•</span>
             <span>Fetched: {formatTimestamp(data.fetchedAt)}</span>
           </div>
